@@ -29,6 +29,7 @@ const TEXT = {
     mapData: "Kaartgegevens ©", mapContributors: "OpenStreetMap-bijdragers",
     lat: (v) => (v >= 0 ? "NB" : "ZB"), lon: (v) => (v >= 0 ? "OL" : "WL"),
     regions: { "Europe and North America": "Europa en Noord-Amerika", "Arab States": "Arabische Staten" },
+    articleNav: "Artikelnavigatie", prev: "Vorig artikel", next: "Volgend artikel", current: "Huidig artikel",
   },
   en: {
     home: "Home", posts: "Posts", tags: "Tags",
@@ -44,6 +45,7 @@ const TEXT = {
     mapData: "Map data ©", mapContributors: "OpenStreetMap contributors",
     lat: (v) => (v >= 0 ? "N" : "S"), lon: (v) => (v >= 0 ? "E" : "W"),
     regions: {},
+    articleNav: "Article navigation", prev: "Previous article", next: "Next article", current: "Current article",
   },
 };
 const T = TEXT[config.language] || TEXT.en;
@@ -186,7 +188,21 @@ function locationMap({ latitude: lat, longitude: lon }, label, widthKm = 200) {
 }
 
 // ---------- World Heritage record ----------
-function heritageArticle(d, contentHtml) {
+// « previous · current · next », following the `order` numbers in the notes (1 comes before 2).
+function articleNav(d, seq) {
+  const i = seq.indexOf(d);
+  if (i < 0) return "";
+  const prev = seq[i - 1], next = seq[i + 1];
+  const chev = (dir) =>
+    `<svg class="h-nav-chev" viewBox="0 0 20 16" width="16" height="13" aria-hidden="true"><path d="${dir < 0 ? "M10 1.5 3.5 8 10 14.5M17 1.5 10.5 8 17 14.5" : "M3 1.5 9.5 8 3 14.5M10 1.5 16.5 8 10 14.5"}"/></svg>`;
+  return `<nav class="h-nav" aria-label="${T.articleNav}">
+  <span class="h-nav-prev">${prev ? `<a href="${href(prev.path)}" rel="prev" aria-label="${esc(T.prev)}: ${esc(prev.title)}">${chev(-1)}<span>${esc(prev.title)}</span></a>` : ""}</span>
+  <span class="h-nav-current" aria-current="page"><span class="visually-hidden">${T.current}: </span>${esc(d.title)}</span>
+  <span class="h-nav-next">${next ? `<a href="${href(next.path)}" rel="next" aria-label="${esc(T.next)}: ${esc(next.title)}"><span>${esc(next.title)}</span>${chev(1)}</a>` : ""}</span>
+</nav>`;
+}
+
+function heritageArticle(d, contentHtml, seq = []) {
   const h = d.heritage;
   const list = (items) => items.join(", ");
   const countries = list(h.countries.map((c) =>
@@ -207,10 +223,13 @@ function heritageArticle(d, contentHtml) {
   ${h.description ? `<p class="h-sub">${esc(h.description)}</p>` : ""}
 </header>
 <div class="h-body${figures ? "" : " no-images"}">
-  <div class="h-text">
-    <div class="h-text-scroll prose" tabindex="0" aria-label="${T.articleText}">
+  <div class="h-main">
+    <div class="h-text">
+      <div class="h-text-scroll prose" tabindex="0" aria-label="${T.articleText}">
 ${contentHtml}
+      </div>
     </div>
+    ${articleNav(d, seq)}
   </div>
   ${figures ? `<aside class="h-images" aria-label="${T.imageAndLocation}">\n${figures}\n</aside>` : ""}
 </div>
@@ -249,6 +268,10 @@ async function write(relDir, html) {
 const docs = await Promise.all(
   (await fs.readdir(IN)).filter((f) => f.endsWith(".json")).map(async (f) => JSON.parse(await fs.readFile(path.join(IN, f), "utf8")))
 );
+// Records with an `order` number, in that order.
+const ordered = docs
+  .filter((d) => d.frontmatter?.order !== undefined && Number.isFinite(Number(d.frontmatter.order)))
+  .sort((a, b) => Number(a.frontmatter.order) - Number(b.frontmatter.order));
 const posts = docs.filter((d) => d.type === "BlogPosting" || d.path.startsWith("posts/")).sort((a, b) => (b.date || "").localeCompare(a.date || ""));
 
 await fs.rm(DIST, { recursive: true, force: true });
@@ -276,7 +299,7 @@ for (const d of docs) {
   let content = md.parse(d.markdown);
   if (d.heritage) {
     content = content.replace(/<h1[^>]*>[\s\S]*?<\/h1>\n?/, ""); // the template prints the title
-    await write(d.path, layout({ title: d.title, description: d.description, url: d.url, jsonld: d.jsonld, body: heritageArticle(d, content) }));
+    await write(d.path, layout({ title: d.title, description: d.description, url: d.url, jsonld: d.jsonld, body: heritageArticle(d, content, ordered) }));
     continue;
   }
   content = hasH1 ? content.replace(/(<\/h1>\n?)/, `$1${metaHtml}`) : `<h1>${esc(d.title)}</h1>\n${metaHtml}${content}`;
