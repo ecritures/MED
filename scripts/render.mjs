@@ -141,7 +141,8 @@ function locationMap({ latitude: lat, longitude: lon }, label, zoom = 15) {
 function heritageArticle(d, contentHtml) {
   const h = d.heritage;
   const list = (items) => items.join(", ");
-  const countries = list(h.countries.map((c) => `<a href="${esc(c.url)}" rel="noopener">${esc(c.label)}</a>`));
+  const countries = list(h.countries.map((c) =>
+    `<span class="h-country">${c.flag ? `<img class="h-flag" src="${esc(c.flag)}" alt="" width="30" height="20">` : ""}<a href="${esc(c.url)}" rel="noopener">${esc(c.label)}</a></span>`));
   const regions = h.regions.length ? esc(h.regions.join(", ")) : `<span class="h-missing">Not known for this country</span>`;
   const figures = h.images
     .map((img, i) => {
@@ -169,7 +170,8 @@ ${contentHtml}
     <div><dt>${h.countries.length > 1 ? "Countries" : "Country"}</dt><dd>${countries || '<span class="h-missing">Not on Wikidata</span>'}</dd></div>
     <div><dt>Inscribed</dt><dd class="h-year">${h.year ?? '<span class="h-missing">Not on Wikidata</span>'}</dd></div>
   </dl>
-  <a class="h-unesco" href="${esc(h.unescoUrl)}" rel="noopener">View on the UNESCO World Heritage List</a>
+  <a class="h-unesco" href="${esc(h.unescoUrl)}" rel="noopener"><svg class="h-chevron" viewBox="0 0 12 16" width="10" height="14" aria-hidden="true"><path d="M2 1.5 9.5 8 2 14.5"/></svg>View on the UNESCO World Heritage List</a>
+  <div class="h-facts-rest"></div>
 </section>
 ${tagList(d)}
 </article>`;

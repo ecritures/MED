@@ -2,7 +2,7 @@
 //
 //   image                P18 (first image)
 //   coordinates          P625
-//   country              P17
+//   country              P17 (flag: P41 on the country)
 //   year of inscription  P1435 = World Heritage Site (Q9259), qualifier start time (P580)
 //   criteria             P2614
 //   UNESCO region        not on Wikidata: derived from the country (ISO code P297) using
@@ -98,7 +98,12 @@ export async function getHeritage(qid, lang = "en") {
   const linked = await getEntities([...countryIds, ...criteriaIds], lang, "labels|claims");
   const countries = countryIds.map((id) => {
     const iso = bestStatements(linked[id]?.claims?.P297)[0]?.mainsnak.datavalue?.value || null;
-    return { id, label: pick(linked[id]?.labels, lang) || id, url: `https://www.wikidata.org/wiki/${id}`, iso, region: REGION_BY_ISO[iso] || null };
+    const flagFile = bestStatements(linked[id]?.claims?.P41)[0]?.mainsnak.datavalue?.value || null;
+    return {
+      id, label: pick(linked[id]?.labels, lang) || id, url: `https://www.wikidata.org/wiki/${id}`, iso,
+      region: REGION_BY_ISO[iso] || null,
+      flag: flagFile ? commonsUrl(flagFile, 64) : null, // P41 flag image
+    };
   });
   const criteria = criteriaIds
     .map((id) => {
