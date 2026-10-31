@@ -15,4 +15,4 @@ Na 1238 maakte Mohammed I ibn Nasr, de stichter van de Nasriden-dynastie en van 
 
 Tijdens de Reconquista viel het koninkrijk Granada op 2 januari 1492 definitief in handen van De Katholieke Koningen (Ferdinand II van Aragon en Isabella I van Castilië).
 
-Bron: Nederlandstalige Wikipedia, artikel "Alhambra (fort)", licentie CC BY-SA 4.0.
+Bron: Nederlandstalige Wikipedia, [Alhambra (fort)](https://nl.wikipedia.org/wiki/Alhambra_%28fort%29), licentie CC BY-SA 4.0.

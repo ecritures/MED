@@ -9,4 +9,4 @@ Het grottencomplex van Gorham is een geheel van grotten in het Brits overzeese g
 
 In juli 2016 werd de grottenstelsels erkend als cultureel werelderfgoed door de 40e sessie van de Commissie voor het Werelderfgoed en in Istanboel ingeschreven op de UNESCO werelderfgoedlijst.
 
-Bron: Nederlandstalige Wikipedia, artikel "Grottencomplex van Gorham", licentie CC BY-SA 4.0.
+Bron: Nederlandstalige Wikipedia, [Grottencomplex van Gorham](https://nl.wikipedia.org/wiki/Grottencomplex_van_Gorham), licentie CC BY-SA 4.0.
