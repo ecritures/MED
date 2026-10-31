@@ -50,6 +50,9 @@ function layout({ title, description, url, jsonld, body }) {
 <meta property="og:title" content="${esc(title)}">
 <meta property="og:description" content="${esc(description)}">
 <meta property="og:url" content="${esc(url)}">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,600;1,7..72,400&family=Marcellus&display=swap">
 <link rel="stylesheet" href="${href("assets/style.css")}">
 ${jsonld ? `<script type="application/ld+json">\n${JSON.stringify(jsonld, null, 2).replace(/</g, "\\u003c")}\n</script>` : ""}
 </head>
@@ -62,7 +65,7 @@ ${jsonld ? `<script type="application/ld+json">\n${JSON.stringify(jsonld, null, 
 ${body}
 </main>
 <footer class="site-footer">
-  <p>${esc(config.title)} · Built from Markdown with linked data (schema.org + Wikidata)</p>
+  <p>${esc(config.description)}</p>
 </footer>
 </body>
 </html>
@@ -104,6 +107,49 @@ ${wd.description ? `<p class="wd-desc">${esc(wd.description)}</p>` : ""}
 ${rows ? `<dl>\n${rows}\n</dl>` : ""}
 <p class="wd-source">Data from <a href="${esc(wd.url)}" rel="noopener">Wikidata</a></p>
 </aside>`;
+}
+
+// ---------- World Heritage record ----------
+function heritageArticle(d, contentHtml) {
+  const h = d.heritage;
+  const list = (items) => items.join(", ");
+  const countries = list(h.countries.map((c) => `<a href="${esc(c.url)}" rel="noopener">${esc(c.label)}</a>`));
+  const regions = h.regions.length ? esc(h.regions.join(", ")) : `<span class="h-missing">Not known for this country</span>`;
+  const figures = h.images
+    .map((img, i) => {
+      const credit = [img.author && `Photo by ${esc(img.author)}`, img.license && esc(img.license)].filter(Boolean).join(", ");
+      return `<figure>
+  <a href="${esc(img.page)}" rel="noopener"><img src="${esc(img.src)}" alt="${esc(img.caption || h.label)}"${i ? ' loading="lazy"' : ""}></a>
+  <figcaption>${credit ? `${credit}. ` : ""}<a href="${esc(img.page)}" rel="noopener">Wikimedia Commons</a></figcaption>
+</figure>`;
+    })
+    .join("\n");
+  const criteria = h.criteria
+    .map((c) => `<li><a class="h-num" href="${esc(c.url)}" rel="noopener" aria-label="Criterion ${esc(c.numeral || c.label)}">${esc((c.numeral || "?").toUpperCase())}</a><span>${esc(c.meaning)}</span></li>`)
+    .join("\n");
+
+  return `<article class="heritage">
+<header class="h-head">
+  <h1>${esc(d.title)}</h1>
+  ${h.description ? `<p class="h-sub">${esc(h.description)}</p>` : ""}
+</header>
+<div class="h-body${figures ? "" : " no-images"}">
+  <div class="h-text prose">
+${contentHtml}
+  </div>
+  ${figures ? `<aside class="h-images" aria-label="Images">\n${figures}\n</aside>` : ""}
+</div>
+<section class="h-facts" aria-label="World Heritage listing">
+  <dl class="h-meta">
+    <div><dt>UNESCO region</dt><dd>${regions}</dd></div>
+    <div><dt>${h.countries.length > 1 ? "Countries" : "Country"}</dt><dd>${countries || '<span class="h-missing">Not on Wikidata</span>'}</dd></div>
+    <div><dt>Inscribed</dt><dd class="h-year">${h.year ?? '<span class="h-missing">Not on Wikidata</span>'}</dd></div>
+  </dl>
+  ${criteria ? `<div class="h-criteria"><h2>Selection criteria</h2><ul>\n${criteria}\n</ul></div>` : ""}
+  <p class="h-links"><a href="${esc(h.unescoUrl)}" rel="noopener">See ${esc(h.label)} on the World Heritage List</a><a href="${esc(h.url)}" rel="noopener">Wikidata item ${esc(h.id)}</a></p>
+</section>
+${tagList(d)}
+</article>`;
 }
 
 function postCard(d) {
@@ -149,8 +195,13 @@ for (const d of docs) {
   const hasH1 = d.headings?.some((h) => h.depth === 1);
   const metaHtml = (meta ? `<p class="meta">${meta}</p>\n` : "") + wikidataBox(d.wikidata);
   let content = md.parse(d.markdown);
+  if (d.heritage) {
+    content = content.replace(/<h1[^>]*>[\s\S]*?<\/h1>\n?/, ""); // the template prints the title
+    await write(d.path, layout({ title: d.title, description: d.description, url: d.url, jsonld: d.jsonld, body: heritageArticle(d, content) }));
+    continue;
+  }
   content = hasH1 ? content.replace(/(<\/h1>\n?)/, `$1${metaHtml}`) : `<h1>${esc(d.title)}</h1>\n${metaHtml}${content}`;
-  let body = `<article>
+  let body = `<article class="prose">
 ${content}
 ${tagList(d)}
 </article>`;

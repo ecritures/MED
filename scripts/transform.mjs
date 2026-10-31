@@ -10,6 +10,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { parseId, getEntityWithProperties } from "./wikidata.mjs";
+import { getHeritage } from "./heritage.mjs";
 
 const ROOT = path.resolve(import.meta.dirname, "..");
 const IN = path.join(ROOT, "data", "json");
@@ -78,7 +79,44 @@ async function enrich(doc) {
   const fm = doc.frontmatter || {};
   const subjectId = parseId(fm.wikidata);
   let subject = null;
+  let heritage = null;
   if (subjectId && !offline) {
+    try {
+      heritage = await getHeritage(subjectId, lang);
+    } catch (err) {
+      console.warn(`  ! ${doc.id}: could not load World Heritage data for ${subjectId}: ${err.message}`);
+    }
+  }
+  if (heritage) {
+    // A World Heritage record: title falls back to the Wikidata label.
+    if (!fm.title && !doc.headings?.some((h) => h.depth === 1)) doc = { ...doc, title: heritage.label };
+    if (!fm.description && heritage.description) doc = { ...doc, description: heritage.description };
+    const pv = (id, name, value, ref) => ({
+      "@type": "PropertyValue",
+      ...(id && { propertyID: `http://www.wikidata.org/prop/direct/${id}` }),
+      name,
+      value,
+      ...(ref && { valueReference: { "@id": ref.uri || `http://www.wikidata.org/entity/${ref.id}`, name: ref.label } }),
+    });
+    about.unshift({
+      "@type": ["LandmarksOrHistoricalBuildings", "TouristAttraction"],
+      "@id": heritage.uri,
+      name: heritage.label,
+      ...(heritage.description && { description: heritage.description }),
+      sameAs: [heritage.url, heritage.unescoUrl],
+      identifier: pv("P757", "World Heritage Site ID", heritage.whsId),
+      ...(heritage.images.length && { image: heritage.images.map((i) => i.src) }),
+      ...(heritage.countries.length && {
+        containedInPlace: heritage.countries.map((c) => ({ "@type": "Country", "@id": `http://www.wikidata.org/entity/${c.id}`, name: c.label })),
+      }),
+      additionalProperty: [
+        ...heritage.regions.map((r) => pv(null, "UNESCO region", r)),
+        ...heritage.countries.map((c) => pv("P17", "country", c.label, c)),
+        ...(heritage.year ? [pv("P1435", "year of inscription on the World Heritage List", heritage.year)] : []),
+        ...heritage.criteria.map((c) => pv("P2614", "World Heritage criterion", c.numeral ? `(${c.numeral})` : c.label, c)),
+      ],
+    });
+  } else if (subjectId && !offline) {
     const list = fm.wikidata_properties ?? config.linking?.wikidataProperties ?? ["P31", "P18"];
     const propIds = (Array.isArray(list) ? list : String(list).split(","))
       .map((p) => parseId(p, "P"))
@@ -147,7 +185,7 @@ async function enrich(doc) {
   const links = {};
   for (const t of [...about, ...mentions]) if (t.sameAs) links[t.name] = t.sameAs[0];
 
-  return { ...doc, url: pageUrl, jsonld, links, wikidata: subject };
+  return { ...doc, url: pageUrl, jsonld, links, wikidata: subject, heritage };
 }
 
 async function enrichRemote(doc) {

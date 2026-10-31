@@ -9,9 +9,12 @@ import fs from "node:fs/promises";
 const API = "https://www.wikidata.org/w/api.php";
 const UA = { "User-Agent": "linked-data-site/1.0 (static site build)" };
 const entityCache = new Map();
-let fixture = null;
+export let fixture = null;
+export let commonsFixture = null;
 if (process.env.WIKIDATA_FIXTURE) {
-  fixture = JSON.parse(await fs.readFile(process.env.WIKIDATA_FIXTURE, "utf8")).entities;
+  const f = JSON.parse(await fs.readFile(process.env.WIKIDATA_FIXTURE, "utf8"));
+  fixture = f.entities;
+  commonsFixture = f.commons || {};
 }
 
 /** "Q5598", "wd:Q5598", "http://www.wikidata.org/entity/Q5598", "https://www.wikidata.org/wiki/Q5598" → "Q5598" */
@@ -21,7 +24,7 @@ export function parseId(value, prefix = "Q") {
 }
 
 /** Load entities (with labels/descriptions/claims) in batches of 50. */
-async function getEntities(ids, lang, props = "labels|descriptions|claims") {
+export async function getEntities(ids, lang, props = "labels|descriptions|claims") {
   const missing = [...new Set(ids)].filter((id) => !entityCache.has(`${id}|${props}`));
   for (let i = 0; i < missing.length; i += 50) {
     const batch = missing.slice(i, i + 50);
@@ -40,16 +43,16 @@ async function getEntities(ids, lang, props = "labels|descriptions|claims") {
   return Object.fromEntries([...new Set(ids)].map((id) => [id, entityCache.get(`${id}|${props}`)]));
 }
 
-const pick = (obj, lang) => obj?.[lang]?.value ?? obj?.en?.value ?? Object.values(obj || {})[0]?.value ?? null;
+export const pick = (obj, lang) => obj?.[lang]?.value ?? obj?.en?.value ?? Object.values(obj || {})[0]?.value ?? null;
 
 // Statements with "preferred" rank win; deprecated ones are skipped.
-function bestStatements(claims = []) {
+export function bestStatements(claims = []) {
   const ok = claims.filter((c) => c.rank !== "deprecated" && c.mainsnak?.snaktype === "value");
   const preferred = ok.filter((c) => c.rank === "preferred");
   return preferred.length ? preferred : ok;
 }
 
-function formatTime({ time, precision }, lang) {
+export function formatTime({ time, precision }, lang) {
   // time looks like "+1606-07-15T00:00:00Z"; precision 9 = year, 10 = month, 11 = day
   const m = time.match(/^([+-])(\d+)-(\d\d)-(\d\d)/);
   if (!m) return { text: time };
@@ -74,7 +77,7 @@ function formatTime({ time, precision }, lang) {
   return { text, date: bc ? null : iso };
 }
 
-const commonsUrl = (file, width) =>
+export const commonsUrl = (file, width) =>
   `https://commons.wikimedia.org/wiki/Special:FilePath/${encodeURIComponent(file.replace(/ /g, "_"))}${width ? `?width=${width}` : ""}`;
 
 /**
