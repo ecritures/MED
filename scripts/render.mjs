@@ -31,6 +31,7 @@ const TEXT = {
     lat: (v) => (v >= 0 ? "NB" : "ZB"), lon: (v) => (v >= 0 ? "OL" : "WL"),
     regions: { "Europe and North America": "Europa en Noord-Amerika", "Arab States": "Arabische Staten" },
     heritageIn: (c) => `UNESCO-werelderfgoed in ${c.length > 1 ? c.slice(0, -1).join(", ") + " en " + c.at(-1) : c[0]}`,
+    readMore: "Naar het artikel", onWikidata: "Bekijk op Wikidata",
     zoomIn: "Inzoomen", zoomOut: "Uitzoomen", openOsm: "Open in OpenStreetMap", mapOf: (l) => `Kaart van de omgeving van ${l}`,
     articleNav: "Artikelnavigatie", prev: "Vorig artikel", next: "Volgend artikel", current: "Huidig artikel",
   },
@@ -49,6 +50,7 @@ const TEXT = {
     lat: (v) => (v >= 0 ? "N" : "S"), lon: (v) => (v >= 0 ? "E" : "W"),
     regions: {},
     heritageIn: (c) => `UNESCO World Heritage Site in ${c.length > 1 ? c.slice(0, -1).join(", ") + " and " + c.at(-1) : c[0]}`,
+    readMore: "Read the article", onWikidata: "View on Wikidata",
     zoomIn: "Zoom in", zoomOut: "Zoom out", openOsm: "Open in OpenStreetMap", mapOf: (l) => `Map of the area around ${l}`,
     articleNav: "Article navigation", prev: "Previous article", next: "Next article", current: "Current article",
   },
@@ -82,7 +84,7 @@ const md = new Marked({
   },
 });
 
-function layout({ title, description, url, jsonld, body }) {
+function layout({ title, description, url, jsonld, body, map = false }) {
   return `<!doctype html>
 <html lang="${esc(config.language)}">
 <head>
@@ -97,6 +99,8 @@ function layout({ title, description, url, jsonld, body }) {
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,600;1,7..72,400&family=Marcellus&display=swap">
+${map ? `<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>` : ""}
 <link rel="stylesheet" href="${href("assets/style.css")}">
 <script type="module" src="${href("assets/map.js")}"></script>
 ${jsonld ? `<script type="application/ld+json">\n${JSON.stringify(jsonld, null, 2).replace(/</g, "\\u003c")}\n</script>` : ""}
@@ -158,12 +162,12 @@ ${rows ? `<dl>\n${rows}\n</dl>` : ""}
 // The frame always shows about `widthKm` kilometres (default 200) from left to right, at any screen size:
 // tile sizes are set in container-width units (cqw), so the map scales with its column.
 // The coordinates sit exactly in the centre, under the marker. No JavaScript needed.
-function locationMap({ latitude: lat, longitude: lon }, label, widthKm = 200) {
+function locationMap({ latitude: lat, longitude: lon }, label, widthKm = 200, qid = "") {
   const layer = mapLayer(lat, lon, widthKm);
   const f = (v) => v.toFixed(5);
   const osm = `https://www.openstreetmap.org/?mlat=${f(lat)}&mlon=${f(lon)}#map=${layer.zoom + 1}/${f(lat)}/${f(lon)}`;
   return `<figure class="h-map">
-  <div class="h-map-frame" data-lat="${lat}" data-lon="${lon}" data-km="${widthKm}" role="img" aria-label="${esc(T.mapOf(label))}">
+  <div class="h-map-frame" data-lat="${lat}" data-lon="${lon}" data-km="${widthKm}" data-q="${esc(qid)}" data-points="${href("assets/map-points.json")}" data-base="${href()}" data-text="${esc(JSON.stringify({ zoomIn: T.zoomIn, zoomOut: T.zoomOut, readMore: T.readMore, onWikidata: T.onWikidata }))}" role="img" aria-label="${esc(T.mapOf(label))}">
     <span class="h-map-tiles">${layer.tiles}</span>
     <svg class="h-pin" viewBox="0 0 22 22" width="22" height="22" aria-hidden="true"><circle cx="11" cy="11" r="9"/></svg>
     <span class="h-scale" style="width:${layer.barWidth}">${layer.barLabel}</span>
@@ -209,7 +213,7 @@ function heritageArticle(d, contentHtml, seq = []) {
   <figcaption>${credit ? `${credit}. ` : ""}<a href="${esc(img.page)}" rel="noopener">Wikimedia Commons</a></figcaption>
 </figure>`;
     })
-    .join("\n") + (h.coordinates ? "\n" + locationMap(h.coordinates, h.label, Number(d.frontmatter?.map_km) || config.mapWidthKm || 200) : "");
+    .join("\n") + (h.coordinates ? "\n" + locationMap(h.coordinates, h.label, Number(d.frontmatter?.map_km) || config.mapWidthKm || 200, h.id) : "");
   return `<article class="heritage">
 <header class="h-head">
   <h1>${esc(d.title)}</h1>
@@ -292,7 +296,7 @@ for (const d of docs) {
   let content = md.parse(d.markdown);
   if (d.heritage) {
     content = content.replace(/<h1[^>]*>[\s\S]*?<\/h1>\n?/, ""); // the template prints the title
-    await write(d.path, layout({ title: d.title, description: d.description, url: d.url, jsonld: d.jsonld, body: heritageArticle(d, content, ordered) }));
+    await write(d.path, layout({ title: d.title, description: d.description, url: d.url, jsonld: d.jsonld, body: heritageArticle(d, content, ordered), map: Boolean(d.heritage.coordinates) }));
     continue;
   }
   content = hasH1 ? content.replace(/(<\/h1>\n?)/, `$1${metaHtml}`) : `<h1>${esc(d.title)}</h1>\n${metaHtml}${content}`;
@@ -386,5 +390,7 @@ await fs.writeFile(path.join(DIST, "data.jsonld"), JSON.stringify({
   "@graph": docs.flatMap((d) => d.jsonld["@graph"].filter((n) => n["@type"] !== "WebSite")),
 }, null, 2));
 await fs.writeFile(path.join(DIST, ".nojekyll"), "");
+// Locations for the interactive map (written by transform.mjs).
+await fs.copyFile(path.join(ROOT, "data", "map-points.json"), path.join(DIST, "assets", "map-points.json")).catch(() => {});
 
 console.log(`render: wrote ${docs.length} page(s) + ${tags.size} tag page(s) to dist/ (base ${baseUrl})`);

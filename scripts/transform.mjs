@@ -9,7 +9,7 @@
 //   SITE_URL=...         (env) overrides baseUrl from site.config.json
 import fs from "node:fs/promises";
 import path from "node:path";
-import { parseId, getEntityWithProperties, fetchJson } from "./wikidata.mjs";
+import { parseId, getEntityWithProperties, fetchJson, getEntities, pick, bestStatements } from "./wikidata.mjs";
 import { getHeritage } from "./heritage.mjs";
 
 const ROOT = path.resolve(import.meta.dirname, "..");
@@ -208,6 +208,7 @@ const files = (await fs.readdir(IN)).filter((f) => f.endsWith(".json"));
 await fs.rm(OUT, { recursive: true, force: true });
 await fs.mkdir(OUT, { recursive: true });
 
+const enriched = [];
 for (const f of files) {
   const doc = JSON.parse(await fs.readFile(path.join(IN, f), "utf8"));
   let out;
@@ -219,6 +220,43 @@ for (const f of files) {
     process.exit(1);
   }
   await fs.writeFile(path.join(OUT, f), JSON.stringify(out, null, 2));
+  enriched.push(out);
+}
+
+// ---------- Points for the interactive map ----------
+// Every site in data/sites.json (the list of Mediterranean World Heritage sites) plus every
+// record with a location. A site links to its article when a record has the same `order`
+// number or the same Wikidata item. Failures here only cost the extra markers, never the build.
+{
+  const records = enriched
+    .filter((d) => d.heritage?.coordinates)
+    .map((d) => ({ q: d.heritage.id, listQ: d.heritage.listedAs?.id, order: Number(d.frontmatter?.order), name: d.title,
+      url: d.path, lat: d.heritage.coordinates.latitude, lon: d.heritage.coordinates.longitude }));
+  let list = [];
+  try { list = JSON.parse(await fs.readFile(path.join(ROOT, "data", "sites.json"), "utf8")); } catch {}
+  const points = new Map(); // key: Wikidata item of the listed site
+  if (list.length && !offline) {
+    try {
+      const qids = [...new Set(list.map((r) => r.qid).filter(Boolean))];
+      const items = await getEntities(qids, lang, "labels|claims");
+      for (const r of list) {
+        if (!r.qid || points.has(r.qid)) { if (points.has(r.qid)) points.get(r.qid).orders.push(r.order); continue; }
+        const geo = bestStatements(items[r.qid]?.claims?.P625)[0]?.mainsnak.datavalue?.value;
+        if (!geo || typeof geo.latitude !== "number") continue;
+        points.set(r.qid, { q: r.qid, name: pick(items[r.qid]?.labels, lang) || r.site, lat: geo.latitude, lon: geo.longitude, orders: [r.order], url: null });
+      }
+    } catch (err) {
+      console.warn(`  ! map: could not load the site list from Wikidata (${err.message}); only articles are shown`);
+    }
+  }
+  for (const rec of records) {
+    const hit = [...points.values()].find((p) => p.orders.includes(rec.order) || p.q === rec.q || p.q === rec.listQ);
+    if (hit) Object.assign(hit, { name: rec.name, url: rec.url, lat: rec.lat, lon: rec.lon, self: rec.q });
+    else points.set(rec.q, { q: rec.q, self: rec.q, name: rec.name, lat: rec.lat, lon: rec.lon, orders: [rec.order], url: rec.url });
+  }
+  const out = [...points.values()].map(({ q, self, name, lat, lon, url }) => ({ q: self || q, name, lat: +lat.toFixed(5), lon: +lon.toFixed(5), url }));
+  await fs.writeFile(path.join(ROOT, "data", "map-points.json"), JSON.stringify(out));
+  console.log(`transform: ${out.length} location(s) for the map`);
 }
 
 // Keep the cache sorted so diffs stay small when you commit it.
