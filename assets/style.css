@@ -7,7 +7,7 @@
   --muted: #5d6b71;
   --cobalt: #1f4e9e;
   --ochre: #a7782a;
-  --turquoise: #1e7470;
+  --accent: #9c3a2b; /* Pompejaans rood */
   --rule: #c8d2d0;
   --panel: #f7f9f9;
   --display: "Marcellus", "Trajan Pro", Georgia, serif;
@@ -22,7 +22,7 @@
     --muted: #9aa9ad;
     --cobalt: #8fb0ea;
     --ochre: #d6a85a;
-    --turquoise: #5fb5ae;
+    --accent: #e08a78;
     --rule: #2f4049;
     --panel: #1c2b33;
   }
@@ -101,14 +101,14 @@ main { padding: 3rem 0 4rem; }
 
 /* « previous · current · next » */
 .h-nav {
-  display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: .8rem 1.2rem;
+  display: grid; grid-template-columns: 1fr auto 1fr; align-items: start; gap: .8rem 1.2rem;
   padding: .9rem 0 0; border-top: 1px solid var(--rule); font-size: .95rem; line-height: 1.3;
 }
-.h-nav a { display: inline-flex; align-items: center; gap: .55rem; color: var(--ink); text-decoration: none; }
+.h-nav a { display: inline-flex; align-items: flex-start; gap: .55rem; color: var(--accent); text-decoration: none; }
 .h-nav a:hover span { text-decoration: underline; text-underline-offset: .2em; }
 .h-nav-next { justify-self: end; text-align: right; }
-.h-nav-current { font: 1.05rem/1.2 var(--display); letter-spacing: .02em; color: var(--muted); text-align: center; }
-.h-nav-chev { flex: none; fill: none; stroke: var(--turquoise); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.h-nav-current { font-weight: 600; color: var(--ink); text-align: center; }
+.h-nav-chev { flex: none; margin-top: .15em; fill: none; stroke: var(--accent); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 @media (max-width: 480px) {
   .h-nav { grid-template-columns: 1fr 1fr; }
@@ -141,7 +141,7 @@ main { padding: 3rem 0 4rem; }
 .h-country { display: inline-flex; align-items: center; gap: .55rem; }
 .h-flag { width: 30px; height: 20px; object-fit: cover; box-shadow: 0 0 0 1px var(--rule); border-radius: 1px; }
 
-.h-chevron { flex: none; fill: none; stroke: var(--turquoise); stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; transition: transform .15s; }
+.h-chevron { flex: none; fill: none; stroke: var(--accent); stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; transition: transform .15s; }
 .h-unesco:hover .h-chevron { stroke: var(--stone); transform: translateX(2px); }
 @media (prefers-reduced-motion: reduce) { .h-chevron { transition: none; } }
 @media (max-width: 820px) {
@@ -238,7 +238,7 @@ article::after { content: ""; display: block; clear: both; }
   position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
   overflow: visible;
 }
-.h-pin circle { fill: color-mix(in srgb, var(--stone) 55%, transparent); stroke: var(--turquoise); stroke-width: 2; }
+.h-pin circle { fill: color-mix(in srgb, var(--stone) 55%, transparent); stroke: var(--accent); stroke-width: 2; }
 .h-map-frame:focus-visible { outline-offset: 4px; }
 .h-map figcaption { margin-top: .45rem; font-size: .78rem; line-height: 1.45; color: var(--muted); }
 .h-map figcaption a { color: inherit; }
