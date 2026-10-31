@@ -1,6 +1,7 @@
 ---
 wikidata: Q1355749
 title: "Gorham's grottencomplex"
+subtitle: "Werelderfgoedlocatie in Gibraltar (Verenigd Koninkrijk)"
 order: 1
 site_uri: https://ecritures.github.io/MED/posts/gorhams-grottencomplex/
 ---

@@ -192,9 +192,10 @@ function articleNav(d, seq) {
 }
 
 function heritageArticle(d, contentHtml, seq = []) {
-  // Subtitle: the Wikidata description in the site language, otherwise "World Heritage in <country>".
+  // Subtitle: `subtitle` in the note; otherwise the Wikidata description in the site language;
+  // otherwise "World Heritage in <country>".
   const countryNames = d.heritage.countries.map((c) => c.label);
-  const subtitle = d.heritage.description || (countryNames.length ? T.heritageIn(countryNames) : "");
+  const subtitle = d.frontmatter?.subtitle || d.heritage.description || (countryNames.length ? T.heritageIn(countryNames) : "");
   const h = d.heritage;
   const list = (items) => items.join(", ");
   const countries = list(h.countries.map((c) =>
