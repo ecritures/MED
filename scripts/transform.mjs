@@ -9,7 +9,7 @@
 //   SITE_URL=...         (env) overrides baseUrl from site.config.json
 import fs from "node:fs/promises";
 import path from "node:path";
-import { parseId, getEntityWithProperties } from "./wikidata.mjs";
+import { parseId, getEntityWithProperties, fetchJson } from "./wikidata.mjs";
 import { getHeritage } from "./heritage.mjs";
 
 const ROOT = path.resolve(import.meta.dirname, "..");
@@ -35,12 +35,7 @@ async function lookupWikidata(term) {
     "https://www.wikidata.org/w/api.php?action=wbsearchentities&format=json&limit=1" +
     `&language=${lang}&uselang=${lang}&search=${encodeURIComponent(term)}`;
   try {
-    const res = await fetch(url, {
-      headers: { "User-Agent": "linked-data-site/1.0 (static site build)" },
-      signal: AbortSignal.timeout(10000),
-    });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const hit = (await res.json()).search?.[0];
+    const hit = (await fetchJson(url)).search?.[0];
     cache[key] = hit
       ? { id: hit.id, label: hit.label, description: hit.description || "" }
       : null;
@@ -80,11 +75,12 @@ async function enrich(doc) {
   const subjectId = parseId(fm.wikidata);
   let subject = null;
   let heritage = null;
+  const loadErrors = [];
   if (subjectId && !offline) {
     try {
       heritage = await getHeritage(subjectId, lang);
     } catch (err) {
-      console.warn(`  ! ${doc.id}: could not load World Heritage data for ${subjectId}: ${err.message}`);
+      loadErrors.push(err.message);
     }
   }
   if (heritage) {
@@ -126,11 +122,17 @@ async function enrich(doc) {
       .filter(Boolean);
     try {
       subject = await getEntityWithProperties(subjectId, propIds, lang);
-      if (!subject) console.warn(`  ! ${doc.id}: Wikidata item ${subjectId} not found`);
+      if (!subject) loadErrors.push(`item ${subjectId} does not exist on Wikidata`);
     } catch (err) {
-      console.warn(`  ! ${doc.id}: could not load Wikidata item ${subjectId}: ${err.message}`);
+      loadErrors.push(err.message);
     }
   }
+  // A note that names a Wikidata item must get its data; otherwise stop the build, so a
+  // half-empty page is never published (the previous version of the site stays online).
+  if (subjectId && !offline && !heritage && !subject) {
+    throw new Error(`${doc.source}: could not load Wikidata item ${subjectId}. ${[...new Set(loadErrors)].join(" / ")}`);
+  }
+  if (subject && !fm.title && !doc.headings?.some((h) => h.depth === 1)) doc = { ...doc, title: subject.label };
   if (subject) {
     about.unshift({
       "@type": fm.wikidata_type || "Thing",
@@ -208,7 +210,14 @@ await fs.mkdir(OUT, { recursive: true });
 
 for (const f of files) {
   const doc = JSON.parse(await fs.readFile(path.join(IN, f), "utf8"));
-  const out = process.env.TRANSFORMER_URL ? await enrichRemote(doc) : await enrich(doc);
+  let out;
+  try {
+    out = process.env.TRANSFORMER_URL ? await enrichRemote(doc) : await enrich(doc);
+  } catch (err) {
+    // "::error::" makes GitHub Actions show the message prominently on the run page.
+    console.error(`::error title=Linked data step failed::${err.message}`);
+    process.exit(1);
+  }
   await fs.writeFile(path.join(OUT, f), JSON.stringify(out, null, 2));
 }
 

@@ -8,7 +8,9 @@
 //   UNESCO region        not on Wikidata: derived from the country (ISO code P297) using
 //                        UNESCO's regional grouping of States Parties, see REGION_BY_ISO.
 //   UNESCO page          https://whc.unesco.org/en/list/<P757>
-import { getEntities, pick, bestStatements, commonsUrl, commonsFixture } from "./wikidata.mjs";
+// If the item has no P757 but is part of (P361) an item that has, the listing details
+// come from that item; image, coordinates and country come from the item itself where present.
+import { getEntities, pick, bestStatements, commonsUrl, commonsFixture, fetchJson } from "./wikidata.mjs";
 
 const WORLD_HERITAGE_SITE = "Q9259";
 
@@ -18,7 +20,7 @@ const ARAB = "Arab States";
 // Note: UNESCO groups Israel, Türkiye and Cyprus under Europe and North America.
 const REGION_BY_ISO = {
   ES: EUR_NA, PT: EUR_NA, AD: EUR_NA, FR: EUR_NA, MC: EUR_NA, IT: EUR_NA, SM: EUR_NA, VA: EUR_NA,
-  MT: EUR_NA, SI: EUR_NA, HR: EUR_NA, BA: EUR_NA, ME: EUR_NA, AL: EUR_NA, MK: EUR_NA, RS: EUR_NA,
+  MT: EUR_NA, GI: EUR_NA, SI: EUR_NA, HR: EUR_NA, BA: EUR_NA, ME: EUR_NA, AL: EUR_NA, MK: EUR_NA, RS: EUR_NA,
   GR: EUR_NA, BG: EUR_NA, TR: EUR_NA, CY: EUR_NA, IL: EUR_NA, GB: EUR_NA,
   MA: ARAB, DZ: ARAB, TN: ARAB, LY: ARAB, EG: ARAB, LB: ARAB, SY: ARAB, PS: ARAB, JO: ARAB, MR: ARAB,
 };
@@ -56,8 +58,7 @@ async function commonsInfo(files) {
   const url = "https://commons.wikimedia.org/w/api.php?action=query&format=json&prop=imageinfo" +
     `&iiprop=url|extmetadata&iiurlwidth=900&titles=${encodeURIComponent(titles)}`;
   try {
-    const res = await fetch(url, { headers: { "User-Agent": "linked-data-site/1.0" }, signal: AbortSignal.timeout(15000) });
-    const pages = Object.values((await res.json()).query?.pages || {});
+    const pages = Object.values((await fetchJson(url)).query?.pages || {});
     const strip = (h = "") => h.replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
     return Object.fromEntries(pages.map((p) => {
       const info = p.imageinfo?.[0] || {};
@@ -80,12 +81,26 @@ async function commonsInfo(files) {
 export async function getHeritage(qid, lang = "en") {
   const entity = (await getEntities([qid], lang))[qid];
   if (!entity) return null;
-  const claims = entity.claims || {};
-  const whsId = bestStatements(claims.P757)[0]?.mainsnak.datavalue?.value;
-  if (!whsId) return null;
+  const own = entity.claims || {};
+  const firstValue = (c, pid) => bestStatements(c[pid])[0]?.mainsnak.datavalue?.value;
+  const itemIdsOf = (c, pid) => bestStatements(c[pid]).map((s) => s.mainsnak.datavalue?.value?.id).filter(Boolean);
 
-  const itemIds = (pid) => bestStatements(claims[pid]).map((s) => s.mainsnak.datavalue?.value?.id).filter(Boolean);
-  const countryIds = itemIds("P17");
+  // The UNESCO listing may sit on this item, or on a site it is part of (P361),
+  // e.g. a cave that belongs to a larger World Heritage property. Look up to two levels up.
+  let listing = { id: qid, claims: own, label: pick(entity.labels, lang) };
+  let queue = itemIdsOf(own, "P361");
+  for (let depth = 0; !firstValue(listing.claims, "P757") && queue.length && depth < 2; depth++) {
+    const parents = await getEntities(queue, lang);
+    const hit = queue.find((id) => parents[id] && firstValue(parents[id].claims || {}, "P757"));
+    if (hit) listing = { id: hit, claims: parents[hit].claims, label: pick(parents[hit].labels, lang) };
+    else queue = queue.flatMap((id) => itemIdsOf(parents[id]?.claims || {}, "P361"));
+  }
+  const whsId = firstValue(listing.claims, "P757");
+  if (!whsId) return null;
+  const claims = listing.claims;
+
+  const itemIds = (pid) => itemIdsOf(claims, pid);
+  const countryIds = itemIdsOf(own, "P17").length ? itemIdsOf(own, "P17") : itemIds("P17");
   const criteriaIds = itemIds("P2614");
 
   // Year of inscription: start time on the "World Heritage Site" designation.
@@ -113,8 +128,10 @@ export async function getHeritage(qid, lang = "en") {
     })
     .sort((a, b) => ROMAN_ORDER.indexOf(a.numeral) - ROMAN_ORDER.indexOf(b.numeral));
 
-  const files = bestStatements(claims.P18).map((s) => s.mainsnak.datavalue?.value).filter(Boolean).slice(0, 1);
-  const geo = bestStatements(claims.P625)[0]?.mainsnak.datavalue?.value;
+  // Image and location: from the item itself, falling back to the listed site.
+  const pickOwn = (pid) => (bestStatements(own[pid]).length ? own : claims)[pid];
+  const files = bestStatements(pickOwn("P18")).map((s) => s.mainsnak.datavalue?.value).filter(Boolean).slice(0, 1);
+  const geo = bestStatements(pickOwn("P625"))[0]?.mainsnak.datavalue?.value;
   const coordinates = geo && typeof geo.latitude === "number" ? { latitude: geo.latitude, longitude: geo.longitude } : null;
   const info = await commonsInfo(files);
   const images = files.map((file) => ({
@@ -133,6 +150,7 @@ export async function getHeritage(qid, lang = "en") {
     label: pick(entity.labels, lang) || qid,
     description: pick(entity.descriptions, lang) || "",
     whsId: String(whsId),
+    listedAs: listing.id !== qid ? { id: listing.id, label: listing.label || listing.id, url: `https://www.wikidata.org/wiki/${listing.id}` } : null,
     unescoUrl: `https://whc.unesco.org/en/list/${encodeURIComponent(String(whsId).replace(/-.*$/, ""))}`,
     year: years[0] ?? null,
     countries,

@@ -7,7 +7,32 @@
 import fs from "node:fs/promises";
 
 const API = "https://www.wikidata.org/w/api.php";
-const UA = { "User-Agent": "linked-data-site/1.0 (static site build)" };
+// Wikimedia asks automated clients to identify themselves with a name and a way to get in touch.
+const UA = {
+  "User-Agent": `MED-site-builder/1.1 (${process.env.GITHUB_SERVER_URL && process.env.GITHUB_REPOSITORY
+    ? `${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}` : "https://github.com/ecritures/MED"}) node-fetch`,
+  "Api-User-Agent": "MED-site-builder/1.1 (https://github.com/ecritures/MED)",
+  Accept: "application/json",
+};
+
+/** GET JSON from Wikimedia, retrying a few times; errors say what the server answered. */
+export async function fetchJson(url) {
+  let last;
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      const res = await fetch(url, { headers: UA, signal: AbortSignal.timeout(20000) });
+      const text = await res.text();
+      if (!res.ok) throw new Error(`HTTP ${res.status} from ${new URL(url).host}: ${text.slice(0, 200).replace(/\s+/g, " ")}`);
+      const json = JSON.parse(text);
+      if (json.error) throw new Error(`${json.error.code}: ${json.error.info}`);
+      return json;
+    } catch (err) {
+      last = err;
+      if (attempt < 3) await new Promise((r) => setTimeout(r, 1500 * attempt));
+    }
+  }
+  throw last;
+}
 const entityCache = new Map();
 export let fixture = null;
 export let commonsFixture = null;
@@ -32,11 +57,20 @@ export async function getEntities(ids, lang, props = "labels|descriptions|claims
     if (fixture) {
       entities = Object.fromEntries(batch.map((id) => [id, fixture[id] || { missing: "" }]));
     } else {
+      const languages = [...new Set([lang, "en"])].join("|");
       const url = `${API}?action=wbgetentities&format=json&ids=${batch.join("|")}` +
-        `&props=${encodeURIComponent(props)}&languages=${lang}|en&languagefallback=1`;
-      const res = await fetch(url, { headers: UA, signal: AbortSignal.timeout(15000) });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      entities = (await res.json()).entities || {};
+        `&props=${encodeURIComponent(props)}&languages=${encodeURIComponent(languages)}`;
+      try {
+        entities = (await fetchJson(url)).entities || {};
+      } catch (err) {
+        // Fallback: the plain entity export, one item at a time.
+        console.warn(`  ! wbgetentities failed (${err.message}); trying Special:EntityData`);
+        entities = {};
+        for (const id of batch) {
+          const data = await fetchJson(`https://www.wikidata.org/wiki/Special:EntityData/${id}.json`);
+          entities[id] = Object.values(data.entities || {})[0] || { missing: "" };
+        }
+      }
     }
     for (const id of batch) entityCache.set(`${id}|${props}`, entities[id] && !("missing" in entities[id]) ? entities[id] : null);
   }

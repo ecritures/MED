@@ -186,6 +186,7 @@ ${contentHtml}
   </dl>
   </div>
   <div class="h-facts-bottom">
+    ${h.listedAs ? `<p class="h-part">Part of the World Heritage site <a href="${esc(h.listedAs.url)}" rel="noopener">${esc(h.listedAs.label)}</a></p>` : ""}
     <a class="h-unesco" href="${esc(h.unescoUrl)}" rel="noopener"><svg class="h-chevron" viewBox="0 0 12 16" width="10" height="14" aria-hidden="true"><path d="M2 1.5 9.5 8 2 14.5"/></svg>View on the UNESCO World Heritage List</a>
   </div>
 </section>

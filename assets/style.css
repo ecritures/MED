@@ -115,6 +115,9 @@ main { padding: 3rem 0 4rem; }
 .h-facts-top, .h-facts-bottom { display: flex; align-items: center; }
 .h-facts-top { padding-bottom: 1.6rem; }
 .h-facts-bottom { padding-top: 1.6rem; border-top: 2px dotted color-mix(in srgb, var(--ink) 55%, transparent); }
+.h-facts-bottom { flex-wrap: wrap; gap: 1rem 2.5rem; }
+.h-part { margin: 0; font-size: 1rem; }
+.h-part a { color: var(--ink); }
 .h-country { display: inline-flex; align-items: center; gap: .55rem; }
 .h-flag { width: 30px; height: 20px; object-fit: cover; box-shadow: 0 0 0 1px var(--rule); border-radius: 1px; }
 
