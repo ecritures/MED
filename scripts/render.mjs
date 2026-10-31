@@ -81,6 +81,31 @@ function tagList(doc) {
     .join("")}</ul>`;
 }
 
+// Fact box for the post's main Wikidata subject (front matter: wikidata + wikidata_properties).
+function wikidataBox(wd) {
+  if (!wd) return "";
+  const value = (v) => {
+    switch (v.kind) {
+      case "item": return `<a href="${esc(v.url)}" rel="noopener">${esc(v.text)}</a>`;
+      case "date": return v.date ? `<time datetime="${esc(v.date)}">${esc(v.text)}</time>` : esc(v.text);
+      case "url": return `<a href="${esc(v.url)}" rel="noopener">${esc(v.text.replace(/^https?:\/\/(www\.)?/, ""))}</a>`;
+      case "image": return `<a href="${esc(v.url)}" rel="noopener"><img src="${esc(v.image)}" alt="${esc(v.text)}" loading="lazy"></a>`;
+      default: return esc(v.text);
+    }
+  };
+  const rows = wd.properties
+    .filter((p) => !(p.id === "P18" && wd.image)) // the main image is shown at the top
+    .map((p) => `<dt><a href="https://www.wikidata.org/wiki/Property:${p.id}" rel="noopener" title="${p.id}">${esc(p.label)}</a></dt><dd>${p.values.map(value).join(", ")}</dd>`)
+    .join("\n");
+  return `<aside class="wd-card">
+${wd.image ? `<img class="wd-image" src="${esc(wd.image)}" alt="${esc(wd.label)}" loading="lazy">` : ""}
+<p class="wd-title"><a href="${esc(wd.url)}" rel="noopener">${esc(wd.label)}</a> <span class="wd-id">${esc(wd.id)}</span></p>
+${wd.description ? `<p class="wd-desc">${esc(wd.description)}</p>` : ""}
+${rows ? `<dl>\n${rows}\n</dl>` : ""}
+<p class="wd-source">Data from <a href="${esc(wd.url)}" rel="noopener">Wikidata</a></p>
+</aside>`;
+}
+
 function postCard(d) {
   return `<li class="card">
   <a href="${href(d.path)}"><h3>${esc(d.title)}</h3></a>
@@ -122,7 +147,7 @@ for (const d of docs) {
 
   // Use the Markdown H1 as page title if present; otherwise print the front-matter title.
   const hasH1 = d.headings?.some((h) => h.depth === 1);
-  const metaHtml = meta ? `<p class="meta">${meta}</p>\n` : "";
+  const metaHtml = (meta ? `<p class="meta">${meta}</p>\n` : "") + wikidataBox(d.wikidata);
   let content = md.parse(d.markdown);
   content = hasH1 ? content.replace(/(<\/h1>\n?)/, `$1${metaHtml}`) : `<h1>${esc(d.title)}</h1>\n${metaHtml}${content}`;
   let body = `<article>

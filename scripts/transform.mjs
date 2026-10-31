@@ -9,6 +9,7 @@
 //   SITE_URL=...         (env) overrides baseUrl from site.config.json
 import fs from "node:fs/promises";
 import path from "node:path";
+import { parseId, getEntityWithProperties } from "./wikidata.mjs";
 
 const ROOT = path.resolve(import.meta.dirname, "..");
 const IN = path.join(ROOT, "data", "json");
@@ -16,7 +17,7 @@ const OUT = path.join(ROOT, "data", "linked");
 const CACHE_FILE = path.join(ROOT, "data", "wikidata-cache.json");
 const config = JSON.parse(await fs.readFile(path.join(ROOT, "site.config.json"), "utf8"));
 const baseUrl = (process.env.SITE_URL || config.baseUrl).replace(/\/$/, "") + "/";
-const offline = process.argv.includes("--offline") || !config.linking?.wikidata;
+const offline = (process.argv.includes("--offline") || !config.linking?.wikidata) && !process.env.WIKIDATA_FIXTURE;
 const lang = config.linking?.wikidataLanguage || "en";
 
 // ---------- Wikidata lookup with a committed cache ----------
@@ -53,7 +54,8 @@ async function toThing(entity) {
   // entity is "Amsterdam" or { name, wikidata?, type?, url? }
   const e = typeof entity === "string" ? { name: entity } : entity;
   const thing = { "@type": e.type || "Thing", name: e.name };
-  let wd = e.wikidata ? { id: e.wikidata } : await lookupWikidata(e.name);
+  // wikidata: may be a Q-ID or a full Wikidata URI
+  let wd = e.wikidata ? { id: parseId(e.wikidata) } : await lookupWikidata(e.name);
   if (wd?.id) {
     thing["@id"] = `http://www.wikidata.org/entity/${wd.id}`;
     thing.sameAs = [`https://www.wikidata.org/wiki/${wd.id}`];
@@ -69,6 +71,45 @@ async function enrich(doc) {
   const author = doc.author || config.author?.name;
   const about = await Promise.all(doc.tags.map(toThing));
   const mentions = await Promise.all(doc.entities.map(toThing));
+
+  // Main subject from Wikidata, with the properties chosen in front matter:
+  //   wikidata: Q5598   (or https://www.wikidata.org/wiki/Q5598)
+  //   wikidata_properties: [P569, P570, P19, P106, P18]
+  const fm = doc.frontmatter || {};
+  const subjectId = parseId(fm.wikidata);
+  let subject = null;
+  if (subjectId && !offline) {
+    const list = fm.wikidata_properties ?? config.linking?.wikidataProperties ?? ["P31", "P18"];
+    const propIds = (Array.isArray(list) ? list : String(list).split(","))
+      .map((p) => parseId(p, "P"))
+      .filter(Boolean);
+    try {
+      subject = await getEntityWithProperties(subjectId, propIds, lang);
+      if (!subject) console.warn(`  ! ${doc.id}: Wikidata item ${subjectId} not found`);
+    } catch (err) {
+      console.warn(`  ! ${doc.id}: could not load Wikidata item ${subjectId}: ${err.message}`);
+    }
+  }
+  if (subject) {
+    about.unshift({
+      "@type": fm.wikidata_type || "Thing",
+      "@id": subject.uri,
+      name: subject.label,
+      ...(subject.description && { description: subject.description }),
+      sameAs: [subject.url],
+      ...(subject.image && { image: subject.image }),
+      additionalProperty: subject.properties.flatMap((p) =>
+        p.values.map((v) => ({
+          "@type": "PropertyValue",
+          propertyID: `http://www.wikidata.org/prop/direct/${p.id}`,
+          name: p.label,
+          value: v.date || v.amount || v.text,
+          ...(v.uri && { valueReference: { "@id": v.uri, name: v.text } }),
+          ...(v.kind === "image" || v.kind === "url" ? { url: v.image || v.url } : {}),
+        }))
+      ),
+    });
+  }
 
   const main = {
     "@type": doc.type,
@@ -106,7 +147,7 @@ async function enrich(doc) {
   const links = {};
   for (const t of [...about, ...mentions]) if (t.sameAs) links[t.name] = t.sameAs[0];
 
-  return { ...doc, url: pageUrl, jsonld, links };
+  return { ...doc, url: pageUrl, jsonld, links, wikidata: subject };
 }
 
 async function enrichRemote(doc) {

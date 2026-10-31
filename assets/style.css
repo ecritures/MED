@@ -50,4 +50,22 @@ blockquote { margin: 1.5rem 0; padding-left: 1rem; border-left: 3px solid var(--
 .card h3 { margin: 0 0 .2rem; }
 .card a { text-decoration: none; }
 .card p { margin: .4rem 0 0; color: var(--muted); font-size: .95rem; }
+.wd-card {
+  float: right; width: 16rem; margin: .3rem 0 1.2rem 1.5rem; padding: 1rem;
+  background: var(--card); border: 1px solid var(--line); border-radius: 8px;
+  font: .85rem/1.45 system-ui, sans-serif;
+}
+.wd-card .wd-image { display: block; width: 100%; border-radius: 4px; margin-bottom: .7rem; }
+.wd-card .wd-title { margin: 0; font-weight: 700; font-size: 1rem; }
+.wd-card .wd-title a { color: var(--text); text-decoration: none; }
+.wd-card .wd-id { font: .7rem var(--mono); color: var(--muted); }
+.wd-card .wd-desc { margin: .2rem 0 .6rem; color: var(--muted); }
+.wd-card dl { margin: 0; display: grid; gap: .5rem; border-top: 1px solid var(--line); padding-top: .6rem; }
+.wd-card dt { color: var(--muted); font-size: .75rem; text-transform: uppercase; letter-spacing: .03em; }
+.wd-card dt a { color: inherit; text-decoration: none; }
+.wd-card dd { margin: 0; }
+.wd-card dd img { max-width: 100%; border-radius: 4px; }
+.wd-card .wd-source { margin: .8rem 0 0; font-size: .7rem; color: var(--muted); }
+article::after { content: ""; display: block; clear: both; }
+@media (max-width: 640px) { .wd-card { float: none; width: auto; margin: 1rem 0; } }
 .site-footer { border-top: 1px solid var(--line); color: var(--muted); font: .85rem system-ui, sans-serif; padding-top: 1rem; padding-bottom: 2rem; }
