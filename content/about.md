@@ -1,35 +1,30 @@
 ---
-title: How this site works
-description: From Markdown to linked data to HTML, automatically on every push.
+title: Hoe deze site werkt
+description: Van Markdown naar linked data naar HTML, automatisch bij elke synchronisatie.
 type: AboutPage
-tags: [Markdown, Linked data, GitHub Pages]
 ---
 
-# How this site works
+# Hoe deze site werkt
 
-1. **Write** a page as a Markdown file in the `content/` folder.
-2. **Push** it to GitHub.
-3. GitHub Actions turns every page into **JSON**.
-4. The **transformer** adds linked data: schema.org JSON-LD, with tags and entities linked to Wikidata.
-5. The pages are rendered to **HTML** and published on **GitHub Pages**.
+1. **Schrijf** een pagina als Markdown-notitie in de map `content` van de Obsidian-vault.
+2. **Synchroniseer** met Fit; de notitie gaat naar GitHub.
+3. GitHub zet elke pagina om naar **JSON**.
+4. De **transformer** voegt linked data toe: schema.org JSON-LD met gegevens uit Wikidata.
+5. De pagina's worden omgezet naar **HTML** en gepubliceerd op **GitHub Pages**.
 
-## Writing a page
+## Een werelderfgoedpagina schrijven
 
-Every Markdown file starts with a small block of settings, called *front matter*:
+Zet bovenaan de notitie alleen het Wikidata-nummer van de plek:
 
 ```markdown
 ---
-title: My trip to Amsterdam
-date: 2026-10-31
-description: A short summary for search engines.
-tags: [Amsterdam, Travel]
-entities: [Rijksmuseum, "Vincent van Gogh"]
+wikidata: Q1355749
 ---
 
-Your text goes here.
+## Kopje
+
+Tekst van de alinea.
 ```
 
-- `tags` become tag pages and are linked to Wikidata.
-- `entities` are things the page mentions; they are added to the linked data as `mentions`.
-- If a lookup picks the wrong thing, give the ID yourself: `entities: [{name: Mercury, wikidata: Q308}]`.
-- Add `draft: true` to keep a page from being published.
+De titel, de foto, de kaart, het land, de UNESCO-regio en het jaar van inschrijving komen
+automatisch uit Wikidata.

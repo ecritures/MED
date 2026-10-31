@@ -13,6 +13,42 @@ const baseUrl = (process.env.SITE_URL || config.baseUrl).replace(/\/$/, "") + "/
 const basePath = new URL(baseUrl).pathname; // e.g. "/my-website/" or "/"
 const href = (p = "") => basePath + p;
 
+// ---------- Interface text (site.config.json → "language") ----------
+const TEXT = {
+  nl: {
+    home: "Home", posts: "Artikelen", tags: "Trefwoorden",
+    latest: "Nieuwste artikelen", allPosts: (s) => `Alle artikelen op ${s}`, allTags: (s) => `Alle trefwoorden op ${s}`,
+    tag: (t) => `Trefwoord: ${t}`, pagesAbout: (t) => `Pagina's over ${t}`, linkedTo: "Gekoppeld aan",
+    notFound: "Pagina niet gevonden", notFoundText: "Deze pagina bestaat niet.", goHome: "Naar de homepage",
+    dataFrom: "Gegevens van",
+    region: "UNESCO-regio", country: "Land", countries: "Landen", inscribed: "Ingeschreven",
+    notOnWikidata: "Niet op Wikidata", regionUnknown: "Onbekend voor dit land",
+    partOf: "Onderdeel van het werelderfgoed", viewUnesco: "Bekijk op de Werelderfgoedlijst van UNESCO",
+    photo: (a) => `Foto: ${a}`, articleText: "Artikeltekst", imageAndLocation: "Afbeelding en locatie",
+    listing: "Werelderfgoed", openMap: (l) => `Open de locatie van ${l} op OpenStreetMap`,
+    mapData: "Kaartgegevens ©", mapContributors: "OpenStreetMap-bijdragers",
+    lat: (v) => (v >= 0 ? "NB" : "ZB"), lon: (v) => (v >= 0 ? "OL" : "WL"),
+    regions: { "Europe and North America": "Europa en Noord-Amerika", "Arab States": "Arabische Staten" },
+  },
+  en: {
+    home: "Home", posts: "Posts", tags: "Tags",
+    latest: "Latest posts", allPosts: (s) => `All posts on ${s}`, allTags: (s) => `All tags on ${s}`,
+    tag: (t) => `Tag: ${t}`, pagesAbout: (t) => `Pages about ${t}`, linkedTo: "Linked to",
+    notFound: "Page not found", notFoundText: "This page does not exist.", goHome: "Go to the home page",
+    dataFrom: "Data from",
+    region: "UNESCO region", country: "Country", countries: "Countries", inscribed: "Inscribed",
+    notOnWikidata: "Not on Wikidata", regionUnknown: "Not known for this country",
+    partOf: "Part of the World Heritage site", viewUnesco: "View on the UNESCO World Heritage List",
+    photo: (a) => `Photo by ${a}`, articleText: "Article text", imageAndLocation: "Image and location",
+    listing: "World Heritage listing", openMap: (l) => `Open the location of ${l} on OpenStreetMap`,
+    mapData: "Map data ©", mapContributors: "OpenStreetMap contributors",
+    lat: (v) => (v >= 0 ? "N" : "S"), lon: (v) => (v >= 0 ? "E" : "W"),
+    regions: {},
+  },
+};
+const T = TEXT[config.language] || TEXT.en;
+const num = (v, digits) => v.toLocaleString(config.language, { minimumFractionDigits: digits, maximumFractionDigits: digits });
+
 const esc = (s = "") =>
   String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
 const slugify = (s) =>
@@ -60,7 +96,7 @@ ${jsonld ? `<script type="application/ld+json">\n${JSON.stringify(jsonld, null, 
 <body>
 <header class="site-header">
   <a class="site-title" href="${href()}">${esc(config.title)}</a>
-  <nav><a href="${href()}">Home</a><a href="${href("posts/")}">Posts</a><a href="${href("tags/")}">Tags</a></nav>
+  <nav><a href="${href()}">${T.home}</a><a href="${href("posts/")}">${T.posts}</a><a href="${href("tags/")}">${T.tags}</a></nav>
 </header>
 <main>
 ${body}
@@ -106,7 +142,7 @@ ${wd.image ? `<img class="wd-image" src="${esc(wd.image)}" alt="${esc(wd.label)}
 <p class="wd-title"><a href="${esc(wd.url)}" rel="noopener">${esc(wd.label)}</a> <span class="wd-id">${esc(wd.id)}</span></p>
 ${wd.description ? `<p class="wd-desc">${esc(wd.description)}</p>` : ""}
 ${rows ? `<dl>\n${rows}\n</dl>` : ""}
-<p class="wd-source">Data from <a href="${esc(wd.url)}" rel="noopener">Wikidata</a></p>
+<p class="wd-source">${T.dataFrom} <a href="${esc(wd.url)}" rel="noopener">Wikidata</a></p>
 </aside>`;
 }
 
@@ -140,12 +176,12 @@ function locationMap({ latitude: lat, longitude: lon }, label, widthKm = 200) {
   const f = (v) => v.toFixed(5);
   const osm = `https://www.openstreetmap.org/?mlat=${f(lat)}&mlon=${f(lon)}#map=${zoom + 1}/${f(lat)}/${f(lon)}`;
   return `<figure class="h-map">
-  <a class="h-map-frame" href="${osm}" rel="noopener" aria-label="Open the location of ${esc(label)} on OpenStreetMap">
+  <a class="h-map-frame" href="${osm}" rel="noopener" aria-label="${esc(T.openMap(label))}">
     <span class="h-map-tiles">${tiles.join("")}</span>
     <svg class="h-pin" viewBox="0 0 22 22" width="22" height="22" aria-hidden="true"><circle cx="11" cy="11" r="9"/></svg>
     <span class="h-scale" style="width:${((barKm / widthKm) * 100).toFixed(2)}%">${barKm} km</span>
   </a>
-  <figcaption>${Math.abs(lat).toFixed(4)}° ${lat >= 0 ? "N" : "S"}, ${Math.abs(lon).toFixed(4)}° ${lon >= 0 ? "E" : "W"}. Map data © <a href="https://www.openstreetmap.org/copyright" rel="noopener">OpenStreetMap</a> contributors</figcaption>
+  <figcaption>${num(Math.abs(lat), 4)}° ${T.lat(lat)}, ${num(Math.abs(lon), 4)}° ${T.lon(lon)}. ${T.mapData} <a href="https://www.openstreetmap.org/copyright" rel="noopener">${T.mapContributors}</a></figcaption>
 </figure>`;
 }
 
@@ -155,10 +191,10 @@ function heritageArticle(d, contentHtml) {
   const list = (items) => items.join(", ");
   const countries = list(h.countries.map((c) =>
     `<span class="h-country">${c.flag ? `<img class="h-flag" src="${esc(c.flag)}" alt="" width="30" height="20">` : ""}<a href="${esc(c.url)}" rel="noopener">${esc(c.label)}</a></span>`));
-  const regions = h.regions.length ? esc(h.regions.join(", ")) : `<span class="h-missing">Not known for this country</span>`;
+  const regions = h.regions.length ? esc(h.regions.map((r) => T.regions[r] || r).join(", ")) : `<span class="h-missing">${T.regionUnknown}</span>`;
   const figures = h.images
     .map((img, i) => {
-      const credit = [img.author && `Photo by ${esc(img.author)}`, img.license && esc(img.license)].filter(Boolean).join(", ");
+      const credit = [img.author && T.photo(esc(img.author)), img.license && esc(img.license)].filter(Boolean).join(", ");
       return `<figure>
   <a href="${esc(img.page)}" rel="noopener"><img src="${esc(img.src)}" alt="${esc(img.caption || h.label)}"${i ? ' loading="lazy"' : ""}></a>
   <figcaption>${credit ? `${credit}. ` : ""}<a href="${esc(img.page)}" rel="noopener">Wikimedia Commons</a></figcaption>
@@ -172,23 +208,23 @@ function heritageArticle(d, contentHtml) {
 </header>
 <div class="h-body${figures ? "" : " no-images"}">
   <div class="h-text">
-    <div class="h-text-scroll prose" tabindex="0" aria-label="Article text">
+    <div class="h-text-scroll prose" tabindex="0" aria-label="${T.articleText}">
 ${contentHtml}
     </div>
   </div>
-  ${figures ? `<aside class="h-images" aria-label="Image and location">\n${figures}\n</aside>` : ""}
+  ${figures ? `<aside class="h-images" aria-label="${T.imageAndLocation}">\n${figures}\n</aside>` : ""}
 </div>
-<section class="h-facts" aria-label="World Heritage listing">
+<section class="h-facts" aria-label="${T.listing}">
   <div class="h-facts-top">
   <dl class="h-meta">
-    <div><dt>UNESCO region</dt><dd>${regions}</dd></div>
-    <div><dt>${h.countries.length > 1 ? "Countries" : "Country"}</dt><dd>${countries || '<span class="h-missing">Not on Wikidata</span>'}</dd></div>
-    <div><dt>Inscribed</dt><dd class="h-year">${h.year ?? '<span class="h-missing">Not on Wikidata</span>'}</dd></div>
+    <div><dt>${T.region}</dt><dd>${regions}</dd></div>
+    <div><dt>${h.countries.length > 1 ? T.countries : T.country}</dt><dd>${countries || `<span class="h-missing">${T.notOnWikidata}</span>`}</dd></div>
+    <div><dt>${T.inscribed}</dt><dd class="h-year">${h.year ?? `<span class="h-missing">${T.notOnWikidata}</span>`}</dd></div>
   </dl>
   </div>
   <div class="h-facts-bottom">
-    ${h.listedAs ? `<p class="h-part">Part of the World Heritage site <a href="${esc(h.listedAs.url)}" rel="noopener">${esc(h.listedAs.label)}</a></p>` : ""}
-    <a class="h-unesco" href="${esc(h.unescoUrl)}" rel="noopener"><svg class="h-chevron" viewBox="0 0 12 16" width="10" height="14" aria-hidden="true"><path d="M2 1.5 9.5 8 2 14.5"/></svg>View on the UNESCO World Heritage List</a>
+    ${h.listedAs ? `<p class="h-part">${T.partOf} <a href="${esc(h.listedAs.url)}" rel="noopener">${esc(h.listedAs.label)}</a></p>` : ""}
+    <a class="h-unesco" href="${esc(h.unescoUrl)}" rel="noopener"><svg class="h-chevron" viewBox="0 0 12 16" width="10" height="14" aria-hidden="true"><path d="M2 1.5 9.5 8 2 14.5"/></svg>${T.viewUnesco}</a>
   </div>
 </section>
 ${tagList(d)}
@@ -250,7 +286,7 @@ ${tagList(d)}
 </article>`;
 
   if (isHome && posts.length) {
-    body += `<section><h2>Latest posts</h2><ul class="cards">${posts.slice(0, 5).map(postCard).join("")}</ul></section>`;
+    body += `<section><h2>${T.latest}</h2><ul class="cards">${posts.slice(0, 5).map(postCard).join("")}</ul></section>`;
   }
   await write(d.path, layout({ title: d.title, description: d.description, url: d.url, jsonld: d.jsonld, body }));
 }
@@ -259,19 +295,19 @@ ${tagList(d)}
 if (!docs.some((d) => d.path === "posts/")) {
   const url = baseUrl + "posts/";
   await write("posts", layout({
-    title: "Posts",
-    description: `All posts on ${config.title}`,
+    title: T.posts,
+    description: T.allPosts(config.title),
     url,
     jsonld: {
       "@context": "https://schema.org",
       "@type": "CollectionPage",
       "@id": url,
       url,
-      name: "Posts",
+      name: T.posts,
       isPartOf: { "@id": baseUrl + "#website" },
       hasPart: posts.map((p) => ({ "@id": p.url + "#main" })),
     },
-    body: `<h1>Posts</h1><ul class="cards">${posts.map(postCard).join("")}</ul>`,
+    body: `<h1>${T.posts}</h1><ul class="cards">${posts.map(postCard).join("")}</ul>`,
   }));
 }
 
@@ -286,28 +322,28 @@ for (const t of tags.values()) {
   const url = baseUrl + `tags/${slug}/`;
   const thing = { "@type": "DefinedTerm", name: t.name, ...(t.wikidata && { sameAs: t.wikidata }) };
   await write(`tags/${slug}`, layout({
-    title: `Tag: ${t.name}`,
-    description: `Pages about ${t.name}`,
+    title: T.tag(t.name),
+    description: T.pagesAbout(t.name),
     url,
     jsonld: {
       "@context": "https://schema.org",
       "@type": "CollectionPage",
       "@id": url,
       url,
-      name: `Pages about ${t.name}`,
+      name: T.pagesAbout(t.name),
       about: thing,
       hasPart: t.docs.map((d) => ({ "@id": d.url + "#main" })),
     },
     body: `<h1>${esc(t.name)}</h1>
-${t.wikidata ? `<p class="meta">Linked to <a href="${esc(t.wikidata)}" rel="noopener">Wikidata ${esc(t.wikidata.split("/").pop())}</a></p>` : ""}
+${t.wikidata ? `<p class="meta">${T.linkedTo} <a href="${esc(t.wikidata)}" rel="noopener">Wikidata ${esc(t.wikidata.split("/").pop())}</a></p>` : ""}
 <ul class="cards">${t.docs.map(postCard).join("")}</ul>`,
   }));
 }
 await write("tags", layout({
-  title: "Tags",
-  description: `All tags on ${config.title}`,
+  title: T.tags,
+  description: T.allTags(config.title),
   url: baseUrl + "tags/",
-  body: `<h1>Tags</h1><ul class="tags big">${[...tags.values()]
+  body: `<h1>${T.tags}</h1><ul class="tags big">${[...tags.values()]
     .sort((a, b) => a.name.localeCompare(b.name))
     .map((t) => `<li><a href="${href(`tags/${slugify(t.name)}/`)}">${esc(t.name)} <span>${t.docs.length}</span></a></li>`)
     .join("")}</ul>`,
@@ -315,10 +351,10 @@ await write("tags", layout({
 
 // ---------- 404, sitemap, robots, raw linked data ----------
 await fs.writeFile(path.join(DIST, "404.html"), layout({
-  title: "Page not found",
-  description: "This page does not exist.",
+  title: T.notFound,
+  description: T.notFoundText,
   url: baseUrl + "404.html",
-  body: `<h1>Page not found</h1><p><a href="${href()}">Go to the home page</a></p>`,
+  body: `<h1>${T.notFound}</h1><p><a href="${href()}">${T.goHome}</a></p>`,
 }));
 
 const urls = [...docs.map((d) => ({ loc: d.url, lastmod: d.updated || d.date })), { loc: baseUrl + "posts/" }, { loc: baseUrl + "tags/" }];

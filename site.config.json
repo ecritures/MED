@@ -1,7 +1,7 @@
 {
   "title": "MED",
-  "description": "World Heritage along the Mediterranean, with facts from Wikidata.",
-  "language": "en",
+  "description": "Werelderfgoed rond de Middellandse Zee, met gegevens uit Wikidata.",
+  "language": "nl",
   "author": {
     "name": "Danielle Jansen",
     "url": ""
@@ -10,6 +10,6 @@
   "mapWidthKm": 200,
   "linking": {
     "wikidata": true,
-    "wikidataLanguage": "en"
+    "wikidataLanguage": "nl"
   }
 }
