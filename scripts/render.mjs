@@ -110,28 +110,39 @@ ${rows ? `<dl>\n${rows}\n</dl>` : ""}
 }
 
 // ---------- Location map (static, built from OpenStreetMap tiles) ----------
-// A 4×4 block of 256px tiles is placed so the coordinates sit exactly in the centre
-// of the frame; the marker is drawn on top. No JavaScript needed.
-function locationMap({ latitude: lat, longitude: lon }, label, zoom = 15) {
-  const n = 2 ** zoom;
+// The frame always shows about `widthKm` kilometres from left to right, at any screen size:
+// tile sizes are set in container-width units (cqw), so the map scales with its column.
+// The coordinates sit exactly in the centre, under the marker. No JavaScript needed.
+function locationMap({ latitude: lat, longitude: lon }, label, widthKm = 100) {
+  const EARTH = 40075016.686; // metres around the equator
   const rad = (lat * Math.PI) / 180;
+  const tileMetres = (z) => (EARTH * Math.cos(rad)) / 2 ** z;
+  // Pick the zoom level where 2–4 tiles span the frame, so tiles are shown at or below their native size.
+  let zoom = 1;
+  while (zoom < 18 && (widthKm * 1000) / tileMetres(zoom + 1) < 4) zoom++;
+  const across = (widthKm * 1000) / tileMetres(zoom); // tiles across the frame
+  const tw = 100 / across; // one tile, in cqw
+  const n = 2 ** zoom;
   const x = ((lon + 180) / 360) * n;
   const y = ((1 - Math.log(Math.tan(rad) + 1 / Math.cos(rad)) / Math.PI) / 2) * n;
-  const x0 = Math.floor(x) - 2, y0 = Math.floor(y) - 2;
-  const px = Math.round((x - x0) * 256), py = Math.round((y - y0) * 256);
+  const half = Math.ceil(across / 2) + 1;
   const tiles = [];
-  for (let r = 0; r < 4; r++)
-    for (let c = 0; c < 4; c++) {
-      const tx = (((x0 + c) % n) + n) % n, ty = y0 + r;
+  for (let ty = Math.floor(y) - half; ty <= Math.floor(y) + half; ty++)
+    for (let tx = Math.floor(x) - half; tx <= Math.floor(x) + half; tx++) {
       if (ty < 0 || ty >= n) continue;
-      tiles.push(`<img src="https://tile.openstreetmap.org/${zoom}/${tx}/${ty}.png" alt="" width="256" height="256" loading="lazy" style="left:${c * 256}px;top:${r * 256}px">`);
+      const wx = ((tx % n) + n) % n;
+      tiles.push(`<img src="https://tile.openstreetmap.org/${zoom}/${wx}/${ty}.png" alt="" loading="lazy" style="left:${((tx - x) * tw).toFixed(3)}cqw;top:${((ty - y) * tw).toFixed(3)}cqw;width:${tw.toFixed(3)}cqw;height:${tw.toFixed(3)}cqw">`);
     }
+  // Scale bar: a round distance close to a quarter of the frame width.
+  const steps = [1, 2, 5, 10, 20, 25, 50, 100, 200, 250, 500];
+  const barKm = steps.reduce((best, v) => (Math.abs(v - widthKm / 4) < Math.abs(best - widthKm / 4) ? v : best));
   const f = (v) => v.toFixed(5);
   const osm = `https://www.openstreetmap.org/?mlat=${f(lat)}&mlon=${f(lon)}#map=${zoom + 1}/${f(lat)}/${f(lon)}`;
   return `<figure class="h-map">
   <a class="h-map-frame" href="${osm}" rel="noopener" aria-label="Open the location of ${esc(label)} on OpenStreetMap">
-    <span class="h-map-tiles" style="margin-left:-${px}px;margin-top:-${py}px">${tiles.join("")}</span>
+    <span class="h-map-tiles">${tiles.join("")}</span>
     <svg class="h-pin" viewBox="0 0 32 44" width="32" height="44" aria-hidden="true"><path d="M16 1C7.7 1 1 7.6 1 15.8 1 27 16 43 16 43s15-16 15-27.2C31 7.6 24.3 1 16 1z"/><circle cx="16" cy="15.5" r="5.5"/></svg>
+    <span class="h-scale" style="width:${((barKm / widthKm) * 100).toFixed(2)}%">${barKm} km</span>
   </a>
   <figcaption>${Math.abs(lat).toFixed(4)}° ${lat >= 0 ? "N" : "S"}, ${Math.abs(lon).toFixed(4)}° ${lon >= 0 ? "E" : "W"}. Map data © <a href="https://www.openstreetmap.org/copyright" rel="noopener">OpenStreetMap</a> contributors</figcaption>
 </figure>`;
@@ -152,7 +163,7 @@ function heritageArticle(d, contentHtml) {
   <figcaption>${credit ? `${credit}. ` : ""}<a href="${esc(img.page)}" rel="noopener">Wikimedia Commons</a></figcaption>
 </figure>`;
     })
-    .join("\n") + (h.coordinates ? "\n" + locationMap(h.coordinates, h.label) : "");
+    .join("\n") + (h.coordinates ? "\n" + locationMap(h.coordinates, h.label, Number(d.frontmatter?.map_km) || config.mapWidthKm || 100) : "");
   return `<article class="heritage">
 <header class="h-head">
   <h1>${esc(d.title)}</h1>
