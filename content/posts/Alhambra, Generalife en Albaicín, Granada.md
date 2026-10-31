@@ -3,6 +3,7 @@ wikidata: Q9603543
 title: "Alhambra, Generalife en Albaicín, Granada"
 subtitle: "Werelderfgoedlocatie in Granada (Spanje)"
 order: 3
+distance: 48
 site_uri: https://ecritures.github.io/MED/posts/alhambra-generalife-en-albaicin-granada/
 ---
 

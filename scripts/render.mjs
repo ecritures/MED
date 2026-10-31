@@ -31,6 +31,7 @@ const TEXT = {
     lat: (v) => (v >= 0 ? "NB" : "ZB"), lon: (v) => (v >= 0 ? "OL" : "WL"),
     regions: { "Europe and North America": "Europa en Noord-Amerika", "Arab States": "Arabische Staten" },
     heritageIn: (c) => `UNESCO-werelderfgoed in ${c.length > 1 ? c.slice(0, -1).join(", ") + " en " + c.at(-1) : c[0]}`,
+    distance: "Afstand tot de Middellandse Zee", onCoast: "aan de kust",
     readMore: "Naar het artikel", onWikidata: "Bekijk op Wikidata",
     zoomIn: "Inzoomen", zoomOut: "Uitzoomen", openOsm: "Open in OpenStreetMap", mapOf: (l) => `Kaart van de omgeving van ${l}`,
     articleNav: "Artikelnavigatie", prev: "Vorig artikel", next: "Volgend artikel", current: "Huidig artikel",
@@ -50,6 +51,7 @@ const TEXT = {
     lat: (v) => (v >= 0 ? "N" : "S"), lon: (v) => (v >= 0 ? "E" : "W"),
     regions: {},
     heritageIn: (c) => `UNESCO World Heritage Site in ${c.length > 1 ? c.slice(0, -1).join(", ") + " and " + c.at(-1) : c[0]}`,
+    distance: "Distance to the Mediterranean", onCoast: "on the coast",
     readMore: "Read the article", onWikidata: "View on Wikidata",
     zoomIn: "Zoom in", zoomOut: "Zoom out", openOsm: "Open in OpenStreetMap", mapOf: (l) => `Map of the area around ${l}`,
     articleNav: "Article navigation", prev: "Previous article", next: "Next article", current: "Current article",
@@ -195,6 +197,14 @@ function articleNav(d, seq) {
 </nav>`;
 }
 
+// Distance to the Mediterranean, from `distance` in the note (kilometres; 0 = on the coast).
+function distanceHtml(value) {
+  if (value === undefined || value === null || value === "") return "";
+  const km = Number(value);
+  const shown = !Number.isFinite(km) ? esc(value) : km === 0 ? T.onCoast : `≈${num(km, 0)} km`;
+  return `<div><dt>${T.distance}</dt><dd class="h-year h-distance">${shown}</dd></div>`;
+}
+
 function heritageArticle(d, contentHtml, seq = []) {
   // Subtitle: `subtitle` in the note; otherwise the Wikidata description in the site language;
   // otherwise "World Heritage in <country>".
@@ -236,6 +246,7 @@ ${contentHtml}
     <div><dt>${T.region}</dt><dd>${regions}</dd></div>
     <div><dt>${h.countries.length > 1 ? T.countries : T.country}</dt><dd>${countries || `<span class="h-missing">${T.notOnWikidata}</span>`}</dd></div>
     <div><dt>${T.inscribed}</dt><dd class="h-year">${h.year ?? `<span class="h-missing">${T.notOnWikidata}</span>`}</dd></div>
+    ${distanceHtml(d.frontmatter?.distance)}
   </dl>
   </div>
   <div class="h-facts-bottom">

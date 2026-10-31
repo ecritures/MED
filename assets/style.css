@@ -153,7 +153,7 @@ main { padding: 3rem 0 4rem; }
   .h-text { min-height: 0; }
   .h-text-scroll { position: static; max-height: 34rem; }
 }
-.h-meta { flex: 1; display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr) minmax(0, 1fr); gap: 1.5rem 2rem; margin: 0; }
+.h-meta { flex: 1; display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr) minmax(0, .8fr) minmax(0, 1.1fr); gap: 1.5rem 2rem; margin: 0; }
 .h-unesco {
   flex: 0 1 auto; max-width: 100%; display: inline-flex; align-items: center; gap: .65rem; padding: .75rem 1.25rem;
   border: 1px solid var(--ink); border-radius: 2px;
@@ -165,7 +165,7 @@ main { padding: 3rem 0 4rem; }
 .h-meta dt { font-size: .85rem; color: var(--muted); margin-bottom: .2rem; }
 .h-meta dd { margin: 0; font-size: 1.15rem; line-height: 1.4; }
 .h-meta dd a { color: var(--ink); }
-.h-meta .h-year { font: 2.2rem/1 var(--display); letter-spacing: .04em; }
+.h-meta .h-year { font: 1.4rem/1.15 var(--display); letter-spacing: .04em; }
 .h-missing { color: var(--muted); font-size: .9rem; font-style: italic; }
 
 .h-criteria { margin-top: 2.2rem; padding-top: 1.6rem; border-top: 1px solid var(--rule); }
