@@ -7,6 +7,7 @@
   --muted: #5d6b71;
   --cobalt: #1f4e9e;
   --ochre: #a7782a;
+  --turquoise: #1e7470;
   --rule: #c8d2d0;
   --panel: #f7f9f9;
   --display: "Marcellus", "Trajan Pro", Georgia, serif;
@@ -21,6 +22,7 @@
     --muted: #9aa9ad;
     --cobalt: #8fb0ea;
     --ochre: #d6a85a;
+    --turquoise: #5fb5ae;
     --rule: #2f4049;
     --panel: #1c2b33;
   }
@@ -121,7 +123,7 @@ main { padding: 3rem 0 4rem; }
 .h-country { display: inline-flex; align-items: center; gap: .55rem; }
 .h-flag { width: 30px; height: 20px; object-fit: cover; box-shadow: 0 0 0 1px var(--rule); border-radius: 1px; }
 
-.h-chevron { flex: none; fill: none; stroke: var(--ochre); stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; transition: transform .15s; }
+.h-chevron { flex: none; fill: none; stroke: var(--turquoise); stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; transition: transform .15s; }
 .h-unesco:hover .h-chevron { stroke: var(--stone); transform: translateX(2px); }
 @media (prefers-reduced-motion: reduce) { .h-chevron { transition: none; } }
 @media (max-width: 820px) {
@@ -218,13 +220,12 @@ article::after { content: ""; display: block; clear: both; }
   position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
   overflow: visible;
 }
-.h-pin circle { fill: color-mix(in srgb, var(--stone) 55%, transparent); stroke: var(--ink); stroke-width: 2; }
+.h-pin circle { fill: color-mix(in srgb, var(--stone) 55%, transparent); stroke: var(--turquoise); stroke-width: 2; }
 .h-map-frame:focus-visible { outline-offset: 4px; }
 .h-map figcaption { margin-top: .45rem; font-size: .78rem; line-height: 1.45; color: var(--muted); }
 .h-map figcaption a { color: inherit; }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) .h-map-tiles img { filter: grayscale(.7) brightness(.8) contrast(1.05); }
-  :root:not([data-theme="light"]) .h-pin circle { stroke: #e4eae7; }
 }
 @media (max-width: 820px) {
   .h-images { grid-template-columns: minmax(0, 1fr); }
