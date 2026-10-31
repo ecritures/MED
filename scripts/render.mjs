@@ -152,10 +152,6 @@ function heritageArticle(d, contentHtml) {
 </figure>`;
     })
     .join("\n") + (h.coordinates ? "\n" + locationMap(h.coordinates, h.label) : "");
-  const criteria = h.criteria
-    .map((c) => `<li><a class="h-num" href="${esc(c.url)}" rel="noopener" aria-label="Criterion ${esc(c.numeral || c.label)}">${esc((c.numeral || "?").toUpperCase())}</a><span>${esc(c.meaning)}</span></li>`)
-    .join("\n");
-
   return `<article class="heritage">
 <header class="h-head">
   <h1>${esc(d.title)}</h1>
@@ -173,8 +169,7 @@ ${contentHtml}
     <div><dt>${h.countries.length > 1 ? "Countries" : "Country"}</dt><dd>${countries || '<span class="h-missing">Not on Wikidata</span>'}</dd></div>
     <div><dt>Inscribed</dt><dd class="h-year">${h.year ?? '<span class="h-missing">Not on Wikidata</span>'}</dd></div>
   </dl>
-  ${criteria ? `<div class="h-criteria"><h2>Selection criteria</h2><ul>\n${criteria}\n</ul></div>` : ""}
-  <p class="h-links"><a href="${esc(h.unescoUrl)}" rel="noopener">See ${esc(h.label)} on the World Heritage List</a><a href="${esc(h.url)}" rel="noopener">Wikidata item ${esc(h.id)}</a></p>
+  <a class="h-unesco" href="${esc(h.unescoUrl)}" rel="noopener">View on the UNESCO World Heritage List</a>
 </section>
 ${tagList(d)}
 </article>`;

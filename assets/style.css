@@ -8,6 +8,7 @@
   --cobalt: #1f4e9e;
   --ochre: #a7782a;
   --rule: #c8d2d0;
+  --sea-wash: #dfe9f0;
   --display: "Marcellus", "Trajan Pro", Georgia, serif;
   --text: "Literata", Georgia, "Times New Roman", serif;
   color-scheme: light dark;
@@ -21,6 +22,7 @@
     --cobalt: #8fb0ea;
     --ochre: #d6a85a;
     --rule: #2f4049;
+    --sea-wash: #1a2c39;
   }
 }
 
@@ -75,7 +77,9 @@ main { padding: 3rem 0 4rem; }
   align-items: start;
 }
 .h-body.no-images { grid-template-columns: minmax(0, 40rem); }
+.h-text { background: var(--sea-wash); padding: clamp(1.4rem, 3vw, 2.4rem); border-radius: 2px; }
 .h-text > :first-child { margin-top: 0; }
+.h-text > :last-child { margin-bottom: 0; }
 .h-text > p:first-child::first-line { font-variant-caps: small-caps; letter-spacing: .03em; }
 
 .h-images { position: sticky; top: 1.5rem; display: grid; gap: 1.6rem; }
@@ -90,7 +94,16 @@ main { padding: 3rem 0 4rem; }
   background: var(--stone-deep);
   border-top: 2px solid var(--ink);
 }
-.h-meta { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.5rem 2rem; margin: 0; }
+.h-facts { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 1.8rem 3rem; }
+.h-meta { flex: 1 1 36rem; display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr) minmax(0, 1fr); gap: 1.5rem 2rem; margin: 0; }
+.h-unesco {
+  flex: none; display: inline-block; padding: .75rem 1.25rem;
+  border: 1px solid var(--ink); border-radius: 2px;
+  color: var(--ink); text-decoration: none; font-size: .95rem; line-height: 1.3;
+  transition: background-color .15s, color .15s;
+}
+.h-unesco:hover { background: var(--ink); color: var(--stone); }
+@media (prefers-reduced-motion: reduce) { .h-unesco { transition: none; } }
 .h-meta dt { font-size: .85rem; color: var(--muted); margin-bottom: .2rem; }
 .h-meta dd { margin: 0; font-size: 1.15rem; line-height: 1.4; }
 .h-meta dd a { color: var(--ink); }
