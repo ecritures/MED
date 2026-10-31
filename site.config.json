@@ -7,6 +7,7 @@
     "url": ""
   },
   "baseUrl": "https://ecritures.github.io/MED",
+  "mapWidthKm": 200,
   "linking": {
     "wikidata": true,
     "wikidataLanguage": "en"

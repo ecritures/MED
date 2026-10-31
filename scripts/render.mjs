@@ -16,7 +16,8 @@ const href = (p = "") => basePath + p;
 const esc = (s = "") =>
   String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
 const slugify = (s) =>
-  s.toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+  // apostrophes are dropped: "Gorham's" → "gorhams"
+  s.toLowerCase().normalize("NFKD").replace(/['’]/g, "").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
 const fmtDate = (d) =>
   d ? new Date(d + "T00:00:00Z").toLocaleDateString(config.language, { year: "numeric", month: "long", day: "numeric", timeZone: "UTC" }) : "";
 
@@ -110,10 +111,10 @@ ${rows ? `<dl>\n${rows}\n</dl>` : ""}
 }
 
 // ---------- Location map (static, built from OpenStreetMap tiles) ----------
-// The frame always shows about `widthKm` kilometres from left to right, at any screen size:
+// The frame always shows about `widthKm` kilometres (default 200) from left to right, at any screen size:
 // tile sizes are set in container-width units (cqw), so the map scales with its column.
 // The coordinates sit exactly in the centre, under the marker. No JavaScript needed.
-function locationMap({ latitude: lat, longitude: lon }, label, widthKm = 100) {
+function locationMap({ latitude: lat, longitude: lon }, label, widthKm = 200) {
   const EARTH = 40075016.686; // metres around the equator
   const rad = (lat * Math.PI) / 180;
   const tileMetres = (z) => (EARTH * Math.cos(rad)) / 2 ** z;
@@ -141,7 +142,7 @@ function locationMap({ latitude: lat, longitude: lon }, label, widthKm = 100) {
   return `<figure class="h-map">
   <a class="h-map-frame" href="${osm}" rel="noopener" aria-label="Open the location of ${esc(label)} on OpenStreetMap">
     <span class="h-map-tiles">${tiles.join("")}</span>
-    <svg class="h-pin" viewBox="0 0 32 44" width="32" height="44" aria-hidden="true"><path d="M16 1C7.7 1 1 7.6 1 15.8 1 27 16 43 16 43s15-16 15-27.2C31 7.6 24.3 1 16 1z"/><circle cx="16" cy="15.5" r="5.5"/></svg>
+    <svg class="h-pin" viewBox="0 0 22 22" width="22" height="22" aria-hidden="true"><circle cx="11" cy="11" r="9"/></svg>
     <span class="h-scale" style="width:${((barKm / widthKm) * 100).toFixed(2)}%">${barKm} km</span>
   </a>
   <figcaption>${Math.abs(lat).toFixed(4)}° ${lat >= 0 ? "N" : "S"}, ${Math.abs(lon).toFixed(4)}° ${lon >= 0 ? "E" : "W"}. Map data © <a href="https://www.openstreetmap.org/copyright" rel="noopener">OpenStreetMap</a> contributors</figcaption>
@@ -163,7 +164,7 @@ function heritageArticle(d, contentHtml) {
   <figcaption>${credit ? `${credit}. ` : ""}<a href="${esc(img.page)}" rel="noopener">Wikimedia Commons</a></figcaption>
 </figure>`;
     })
-    .join("\n") + (h.coordinates ? "\n" + locationMap(h.coordinates, h.label, Number(d.frontmatter?.map_km) || config.mapWidthKm || 100) : "");
+    .join("\n") + (h.coordinates ? "\n" + locationMap(h.coordinates, h.label, Number(d.frontmatter?.map_km) || config.mapWidthKm || 200) : "");
   return `<article class="heritage">
 <header class="h-head">
   <h1>${esc(d.title)}</h1>

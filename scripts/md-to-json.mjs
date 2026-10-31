@@ -30,6 +30,7 @@ function slugify(s) {
   return String(s)
     .toLowerCase()
     .normalize("NFKD")
+    .replace(/['’]/g, "") // apostrophes: "Gorham's" → "gorhams"
     .replace(/[̀-ͯ]/g, "")
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/(^-|-$)/g, "");

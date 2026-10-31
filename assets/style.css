@@ -215,17 +215,16 @@ article::after { content: ""; display: block; clear: both; }
 }
 .h-scale { display: flex; align-items: flex-start; justify-content: center; height: auto; padding: .2rem 0 .25rem; }
 .h-pin {
-  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -100%);
-  filter: drop-shadow(0 2px 2px rgb(0 0 0 / .3));
+  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+  overflow: visible;
 }
-.h-pin path { fill: var(--cobalt); stroke: #fff; stroke-width: 2; }
-.h-pin circle { fill: #fff; }
+.h-pin circle { fill: color-mix(in srgb, var(--stone) 55%, transparent); stroke: var(--ink); stroke-width: 2; }
 .h-map-frame:focus-visible { outline-offset: 4px; }
 .h-map figcaption { margin-top: .45rem; font-size: .78rem; line-height: 1.45; color: var(--muted); }
 .h-map figcaption a { color: inherit; }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) .h-map-tiles img { filter: grayscale(.7) brightness(.8) contrast(1.05); }
-  :root:not([data-theme="light"]) .h-pin path { fill: #2f62c0; }
+  :root:not([data-theme="light"]) .h-pin circle { stroke: #e4eae7; }
 }
 @media (max-width: 820px) {
   .h-images { grid-template-columns: minmax(0, 1fr); }
