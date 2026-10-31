@@ -1,0 +1,14 @@
+{
+  "title": "MED",
+  "description": "A website built from Markdown, enriched with linked data.",
+  "language": "en",
+  "author": {
+    "name": "Danielle Jansen",
+    "url": ""
+  },
+  "baseUrl": "https://ecritures.github.io/MED",
+  "linking": {
+    "wikidata": true,
+    "wikidataLanguage": "en"
+  }
+}

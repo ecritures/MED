@@ -1,0 +1,22 @@
+{
+  "name": "linked-data-site",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Markdown → JSON → linked data (JSON-LD) → static HTML, published on GitHub Pages",
+  "scripts": {
+    "md2json": "node scripts/md-to-json.mjs",
+    "transform": "node scripts/transform.mjs",
+    "render": "node scripts/render.mjs",
+    "build": "npm run md2json && npm run transform && npm run render",
+    "build:offline": "npm run md2json && node scripts/transform.mjs --offline && npm run render",
+    "serve": "npx --yes serve dist"
+  },
+  "dependencies": {
+    "gray-matter": "^4.0.3",
+    "marked": "18.0.10"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
