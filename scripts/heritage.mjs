@@ -148,7 +148,8 @@ export async function getHeritage(qid, lang = "en") {
     uri: `http://www.wikidata.org/entity/${qid}`,
     url: `https://www.wikidata.org/wiki/${qid}`,
     label: pick(entity.labels, lang) || qid,
-    description: pick(entity.descriptions, lang) || "",
+    // Only a description in the site language; no fallback to another language.
+    description: entity.descriptions?.[lang]?.value || "",
     whsId: String(whsId),
     listedAs: listing.id !== qid ? { id: listing.id, label: listing.label || listing.id, url: `https://www.wikidata.org/wiki/${listing.id}` } : null,
     unescoUrl: `https://whc.unesco.org/en/list/${encodeURIComponent(String(whsId).replace(/-.*$/, ""))}`,

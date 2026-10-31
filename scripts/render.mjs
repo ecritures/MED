@@ -30,6 +30,7 @@ const TEXT = {
     mapData: "Kaartgegevens ©", mapContributors: "OpenStreetMap-bijdragers",
     lat: (v) => (v >= 0 ? "NB" : "ZB"), lon: (v) => (v >= 0 ? "OL" : "WL"),
     regions: { "Europe and North America": "Europa en Noord-Amerika", "Arab States": "Arabische Staten" },
+    heritageIn: (c) => `UNESCO-werelderfgoed in ${c.length > 1 ? c.slice(0, -1).join(", ") + " en " + c.at(-1) : c[0]}`,
     zoomIn: "Inzoomen", zoomOut: "Uitzoomen", openOsm: "Open in OpenStreetMap", mapOf: (l) => `Kaart van de omgeving van ${l}`,
     articleNav: "Artikelnavigatie", prev: "Vorig artikel", next: "Volgend artikel", current: "Huidig artikel",
   },
@@ -47,6 +48,7 @@ const TEXT = {
     mapData: "Map data ©", mapContributors: "OpenStreetMap contributors",
     lat: (v) => (v >= 0 ? "N" : "S"), lon: (v) => (v >= 0 ? "E" : "W"),
     regions: {},
+    heritageIn: (c) => `UNESCO World Heritage Site in ${c.length > 1 ? c.slice(0, -1).join(", ") + " and " + c.at(-1) : c[0]}`,
     zoomIn: "Zoom in", zoomOut: "Zoom out", openOsm: "Open in OpenStreetMap", mapOf: (l) => `Map of the area around ${l}`,
     articleNav: "Article navigation", prev: "Previous article", next: "Next article", current: "Current article",
   },
@@ -190,6 +192,9 @@ function articleNav(d, seq) {
 }
 
 function heritageArticle(d, contentHtml, seq = []) {
+  // Subtitle: the Wikidata description in the site language, otherwise "World Heritage in <country>".
+  const countryNames = d.heritage.countries.map((c) => c.label);
+  const subtitle = d.heritage.description || (countryNames.length ? T.heritageIn(countryNames) : "");
   const h = d.heritage;
   const list = (items) => items.join(", ");
   const countries = list(h.countries.map((c) =>
@@ -207,7 +212,7 @@ function heritageArticle(d, contentHtml, seq = []) {
   return `<article class="heritage">
 <header class="h-head">
   <h1>${esc(d.title)}</h1>
-  ${h.description ? `<p class="h-sub">${esc(h.description)}</p>` : ""}
+  ${subtitle ? `<p class="h-sub">${esc(subtitle)}</p>` : ""}
 </header>
 <div class="h-body${figures ? "" : " no-images"}">
   <div class="h-main">
