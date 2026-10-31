@@ -1,8 +1,9 @@
 ---
-title: A day at the Rijksmuseum
+title: 1- Grotten van Gibraltar
 date: 2026-10-31
-description: An example post showing tags and entities that get linked to Wikidata.
-tags: [Amsterdam, Museums]
+description: eerste item
+tags:
+  - Gibraltar
 entities:
   - name: Rijksmuseum
     type: Museum
@@ -12,7 +13,7 @@ entities:
     type: Person
 ---
 
-This is an example post. Replace it with your own writing.
+Blag=h blah eerste tekst
 
 ## What the linked data adds
 
