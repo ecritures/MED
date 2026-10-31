@@ -106,6 +106,9 @@ async function enrich(doc) {
       sameAs: [heritage.url, heritage.unescoUrl],
       identifier: pv("P757", "World Heritage Site ID", heritage.whsId),
       ...(heritage.images.length && { image: heritage.images.map((i) => i.src) }),
+      ...(heritage.coordinates && {
+        geo: { "@type": "GeoCoordinates", latitude: heritage.coordinates.latitude, longitude: heritage.coordinates.longitude },
+      }),
       ...(heritage.countries.length && {
         containedInPlace: heritage.countries.map((c) => ({ "@type": "Country", "@id": `http://www.wikidata.org/entity/${c.id}`, name: c.label })),
       }),

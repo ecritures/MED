@@ -109,6 +109,34 @@ ${rows ? `<dl>\n${rows}\n</dl>` : ""}
 </aside>`;
 }
 
+// ---------- Location map (static, built from OpenStreetMap tiles) ----------
+// A 4×4 block of 256px tiles is placed so the coordinates sit exactly in the centre
+// of the frame; the marker is drawn on top. No JavaScript needed.
+function locationMap({ latitude: lat, longitude: lon }, label, zoom = 15) {
+  const n = 2 ** zoom;
+  const rad = (lat * Math.PI) / 180;
+  const x = ((lon + 180) / 360) * n;
+  const y = ((1 - Math.log(Math.tan(rad) + 1 / Math.cos(rad)) / Math.PI) / 2) * n;
+  const x0 = Math.floor(x) - 2, y0 = Math.floor(y) - 2;
+  const px = Math.round((x - x0) * 256), py = Math.round((y - y0) * 256);
+  const tiles = [];
+  for (let r = 0; r < 4; r++)
+    for (let c = 0; c < 4; c++) {
+      const tx = (((x0 + c) % n) + n) % n, ty = y0 + r;
+      if (ty < 0 || ty >= n) continue;
+      tiles.push(`<img src="https://tile.openstreetmap.org/${zoom}/${tx}/${ty}.png" alt="" width="256" height="256" loading="lazy" style="left:${c * 256}px;top:${r * 256}px">`);
+    }
+  const f = (v) => v.toFixed(5);
+  const osm = `https://www.openstreetmap.org/?mlat=${f(lat)}&mlon=${f(lon)}#map=${zoom + 1}/${f(lat)}/${f(lon)}`;
+  return `<figure class="h-map">
+  <a class="h-map-frame" href="${osm}" rel="noopener" aria-label="Open the location of ${esc(label)} on OpenStreetMap">
+    <span class="h-map-tiles" style="margin-left:-${px}px;margin-top:-${py}px">${tiles.join("")}</span>
+    <svg class="h-pin" viewBox="0 0 32 44" width="32" height="44" aria-hidden="true"><path d="M16 1C7.7 1 1 7.6 1 15.8 1 27 16 43 16 43s15-16 15-27.2C31 7.6 24.3 1 16 1z"/><circle cx="16" cy="15.5" r="5.5"/></svg>
+  </a>
+  <figcaption>${Math.abs(lat).toFixed(4)}° ${lat >= 0 ? "N" : "S"}, ${Math.abs(lon).toFixed(4)}° ${lon >= 0 ? "E" : "W"}. Map data © <a href="https://www.openstreetmap.org/copyright" rel="noopener">OpenStreetMap</a> contributors</figcaption>
+</figure>`;
+}
+
 // ---------- World Heritage record ----------
 function heritageArticle(d, contentHtml) {
   const h = d.heritage;
@@ -123,7 +151,7 @@ function heritageArticle(d, contentHtml) {
   <figcaption>${credit ? `${credit}. ` : ""}<a href="${esc(img.page)}" rel="noopener">Wikimedia Commons</a></figcaption>
 </figure>`;
     })
-    .join("\n");
+    .join("\n") + (h.coordinates ? "\n" + locationMap(h.coordinates, h.label) : "");
   const criteria = h.criteria
     .map((c) => `<li><a class="h-num" href="${esc(c.url)}" rel="noopener" aria-label="Criterion ${esc(c.numeral || c.label)}">${esc((c.numeral || "?").toUpperCase())}</a><span>${esc(c.meaning)}</span></li>`)
     .join("\n");
@@ -137,7 +165,7 @@ function heritageArticle(d, contentHtml) {
   <div class="h-text prose">
 ${contentHtml}
   </div>
-  ${figures ? `<aside class="h-images" aria-label="Images">\n${figures}\n</aside>` : ""}
+  ${figures ? `<aside class="h-images" aria-label="Image and location">\n${figures}\n</aside>` : ""}
 </div>
 <section class="h-facts" aria-label="World Heritage listing">
   <dl class="h-meta">

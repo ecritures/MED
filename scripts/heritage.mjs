@@ -1,6 +1,7 @@
 // World Heritage record for a Wikidata item that has a World Heritage Site ID (P757).
 //
-//   image(s)             P18
+//   image                P18 (first image)
+//   coordinates          P625
 //   country              P17
 //   year of inscription  P1435 = World Heritage Site (Q9259), qualifier start time (P580)
 //   criteria             P2614
@@ -107,7 +108,9 @@ export async function getHeritage(qid, lang = "en") {
     })
     .sort((a, b) => ROMAN_ORDER.indexOf(a.numeral) - ROMAN_ORDER.indexOf(b.numeral));
 
-  const files = bestStatements(claims.P18).map((s) => s.mainsnak.datavalue?.value).filter(Boolean);
+  const files = bestStatements(claims.P18).map((s) => s.mainsnak.datavalue?.value).filter(Boolean).slice(0, 1);
+  const geo = bestStatements(claims.P625)[0]?.mainsnak.datavalue?.value;
+  const coordinates = geo && typeof geo.latitude === "number" ? { latitude: geo.latitude, longitude: geo.longitude } : null;
   const info = await commonsInfo(files);
   const images = files.map((file) => ({
     file,
@@ -131,5 +134,6 @@ export async function getHeritage(qid, lang = "en") {
     regions: [...new Set(countries.map((c) => c.region).filter(Boolean))],
     criteria,
     images,
+    coordinates,
   };
 }
