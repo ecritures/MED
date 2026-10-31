@@ -3,6 +3,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { Marked } from "marked";
+import { mapLayer } from "../assets/map.js";
 
 const ROOT = path.resolve(import.meta.dirname, "..");
 const IN = path.join(ROOT, "data", "linked");
@@ -29,6 +30,7 @@ const TEXT = {
     mapData: "Kaartgegevens ©", mapContributors: "OpenStreetMap-bijdragers",
     lat: (v) => (v >= 0 ? "NB" : "ZB"), lon: (v) => (v >= 0 ? "OL" : "WL"),
     regions: { "Europe and North America": "Europa en Noord-Amerika", "Arab States": "Arabische Staten" },
+    zoomIn: "Inzoomen", zoomOut: "Uitzoomen", openOsm: "Open in OpenStreetMap", mapOf: (l) => `Kaart van de omgeving van ${l}`,
     articleNav: "Artikelnavigatie", prev: "Vorig artikel", next: "Volgend artikel", current: "Huidig artikel",
   },
   en: {
@@ -45,6 +47,7 @@ const TEXT = {
     mapData: "Map data ©", mapContributors: "OpenStreetMap contributors",
     lat: (v) => (v >= 0 ? "N" : "S"), lon: (v) => (v >= 0 ? "E" : "W"),
     regions: {},
+    zoomIn: "Zoom in", zoomOut: "Zoom out", openOsm: "Open in OpenStreetMap", mapOf: (l) => `Map of the area around ${l}`,
     articleNav: "Article navigation", prev: "Previous article", next: "Next article", current: "Current article",
   },
 };
@@ -93,6 +96,7 @@ function layout({ title, description, url, jsonld, body }) {
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,600;1,7..72,400&family=Marcellus&display=swap">
 <link rel="stylesheet" href="${href("assets/style.css")}">
+<script type="module" src="${href("assets/map.js")}"></script>
 ${jsonld ? `<script type="application/ld+json">\n${JSON.stringify(jsonld, null, 2).replace(/</g, "\\u003c")}\n</script>` : ""}
 </head>
 <body>
@@ -153,37 +157,20 @@ ${rows ? `<dl>\n${rows}\n</dl>` : ""}
 // tile sizes are set in container-width units (cqw), so the map scales with its column.
 // The coordinates sit exactly in the centre, under the marker. No JavaScript needed.
 function locationMap({ latitude: lat, longitude: lon }, label, widthKm = 200) {
-  const EARTH = 40075016.686; // metres around the equator
-  const rad = (lat * Math.PI) / 180;
-  const tileMetres = (z) => (EARTH * Math.cos(rad)) / 2 ** z;
-  // Pick the zoom level where 2–4 tiles span the frame, so tiles are shown at or below their native size.
-  let zoom = 1;
-  while (zoom < 18 && (widthKm * 1000) / tileMetres(zoom + 1) < 4) zoom++;
-  const across = (widthKm * 1000) / tileMetres(zoom); // tiles across the frame
-  const tw = 100 / across; // one tile, in cqw
-  const n = 2 ** zoom;
-  const x = ((lon + 180) / 360) * n;
-  const y = ((1 - Math.log(Math.tan(rad) + 1 / Math.cos(rad)) / Math.PI) / 2) * n;
-  const half = Math.ceil(across / 2) + 1;
-  const tiles = [];
-  for (let ty = Math.floor(y) - half; ty <= Math.floor(y) + half; ty++)
-    for (let tx = Math.floor(x) - half; tx <= Math.floor(x) + half; tx++) {
-      if (ty < 0 || ty >= n) continue;
-      const wx = ((tx % n) + n) % n;
-      tiles.push(`<img src="https://tile.openstreetmap.org/${zoom}/${wx}/${ty}.png" alt="" loading="lazy" style="left:${((tx - x) * tw).toFixed(3)}cqw;top:${((ty - y) * tw).toFixed(3)}cqw;width:${tw.toFixed(3)}cqw;height:${tw.toFixed(3)}cqw">`);
-    }
-  // Scale bar: a round distance close to a quarter of the frame width.
-  const steps = [1, 2, 5, 10, 20, 25, 50, 100, 200, 250, 500];
-  const barKm = steps.reduce((best, v) => (Math.abs(v - widthKm / 4) < Math.abs(best - widthKm / 4) ? v : best));
+  const layer = mapLayer(lat, lon, widthKm);
   const f = (v) => v.toFixed(5);
-  const osm = `https://www.openstreetmap.org/?mlat=${f(lat)}&mlon=${f(lon)}#map=${zoom + 1}/${f(lat)}/${f(lon)}`;
+  const osm = `https://www.openstreetmap.org/?mlat=${f(lat)}&mlon=${f(lon)}#map=${layer.zoom + 1}/${f(lat)}/${f(lon)}`;
   return `<figure class="h-map">
-  <a class="h-map-frame" href="${osm}" rel="noopener" aria-label="${esc(T.openMap(label))}">
-    <span class="h-map-tiles">${tiles.join("")}</span>
+  <div class="h-map-frame" data-lat="${lat}" data-lon="${lon}" data-km="${widthKm}" role="img" aria-label="${esc(T.mapOf(label))}">
+    <span class="h-map-tiles">${layer.tiles}</span>
     <svg class="h-pin" viewBox="0 0 22 22" width="22" height="22" aria-hidden="true"><circle cx="11" cy="11" r="9"/></svg>
-    <span class="h-scale" style="width:${((barKm / widthKm) * 100).toFixed(2)}%">${barKm} km</span>
-  </a>
-  <figcaption>${num(Math.abs(lat), 4)}° ${T.lat(lat)}, ${num(Math.abs(lon), 4)}° ${T.lon(lon)}. ${T.mapData} <a href="https://www.openstreetmap.org/copyright" rel="noopener">${T.mapContributors}</a></figcaption>
+    <span class="h-scale" style="width:${layer.barWidth}">${layer.barLabel}</span>
+    <div class="h-zoom" hidden>
+      <button type="button" data-zoom="in" aria-label="${T.zoomIn}" title="${T.zoomIn}">+</button>
+      <button type="button" data-zoom="out" aria-label="${T.zoomOut}" title="${T.zoomOut}">−</button>
+    </div>
+  </div>
+  <figcaption>${num(Math.abs(lat), 4)}° ${T.lat(lat)}, ${num(Math.abs(lon), 4)}° ${T.lon(lon)}. <a href="${osm}" rel="noopener">${T.openOsm}</a>. ${T.mapData} <a href="https://www.openstreetmap.org/copyright" rel="noopener">${T.mapContributors}</a></figcaption>
 </figure>`;
 }
 
