@@ -159,19 +159,24 @@ function heritageArticle(d, contentHtml) {
   ${h.description ? `<p class="h-sub">${esc(h.description)}</p>` : ""}
 </header>
 <div class="h-body${figures ? "" : " no-images"}">
-  <div class="h-text prose">
+  <div class="h-text">
+    <div class="h-text-scroll prose" tabindex="0" aria-label="Article text">
 ${contentHtml}
+    </div>
   </div>
   ${figures ? `<aside class="h-images" aria-label="Image and location">\n${figures}\n</aside>` : ""}
 </div>
 <section class="h-facts" aria-label="World Heritage listing">
+  <div class="h-facts-top">
   <dl class="h-meta">
     <div><dt>UNESCO region</dt><dd>${regions}</dd></div>
     <div><dt>${h.countries.length > 1 ? "Countries" : "Country"}</dt><dd>${countries || '<span class="h-missing">Not on Wikidata</span>'}</dd></div>
     <div><dt>Inscribed</dt><dd class="h-year">${h.year ?? '<span class="h-missing">Not on Wikidata</span>'}</dd></div>
   </dl>
-  <a class="h-unesco" href="${esc(h.unescoUrl)}" rel="noopener"><svg class="h-chevron" viewBox="0 0 12 16" width="10" height="14" aria-hidden="true"><path d="M2 1.5 9.5 8 2 14.5"/></svg>View on the UNESCO World Heritage List</a>
-  <div class="h-facts-rest"></div>
+  </div>
+  <div class="h-facts-bottom">
+    <a class="h-unesco" href="${esc(h.unescoUrl)}" rel="noopener"><svg class="h-chevron" viewBox="0 0 12 16" width="10" height="14" aria-hidden="true"><path d="M2 1.5 9.5 8 2 14.5"/></svg>View on the UNESCO World Heritage List</a>
+  </div>
 </section>
 ${tagList(d)}
 </article>`;
