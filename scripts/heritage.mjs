@@ -78,7 +78,24 @@ async function commonsInfo(files) {
 }
 
 /** Returns a heritage record, or null when the item has no World Heritage Site ID. */
-export async function getHeritage(qid, lang = "en") {
+/**
+ * Commons file name from what someone pastes: a Commons page URL, an upload.wikimedia.org
+ * URL (also thumbnails), "File:Name.jpg" or just "Name.jpg". Returns null if empty.
+ */
+export function commonsFileName(value) {
+  if (!value) return null;
+  let v = String(value).trim();
+  if (!v) return null;
+  try { v = decodeURIComponent(v); } catch {}
+  let m;
+  if ((m = v.match(/\/wiki\/(?:File|Bestand|Image):([^?#]+)/i))) v = m[1];
+  else if ((m = v.match(/upload\.wikimedia\.org\/wikipedia\/commons\/(?:thumb\/)?[0-9a-f]\/[0-9a-f]{2}\/([^/?#]+)/i))) v = m[1];
+  else if ((m = v.match(/Special:FilePath\/([^?#]+)/i))) v = m[1];
+  v = v.replace(/^(File|Bestand|Image):/i, "").replace(/_/g, " ").trim();
+  return v || null;
+}
+
+export async function getHeritage(qid, lang = "en", imageOverride = null) {
   const entity = (await getEntities([qid], lang))[qid];
   if (!entity) return null;
   const own = entity.claims || {};
@@ -130,7 +147,9 @@ export async function getHeritage(qid, lang = "en") {
 
   // Image and location: from the item itself, falling back to the listed site.
   const pickOwn = (pid) => (bestStatements(own[pid]).length ? own : claims)[pid];
-  const files = bestStatements(pickOwn("P18")).map((s) => s.mainsnak.datavalue?.value).filter(Boolean).slice(0, 1);
+  // The note's `img_uri` replaces the Wikidata image (P18) when it is filled in.
+  const override = commonsFileName(imageOverride);
+  const files = override ? [override] : bestStatements(pickOwn("P18")).map((s) => s.mainsnak.datavalue?.value).filter(Boolean).slice(0, 1);
   const geo = bestStatements(pickOwn("P625"))[0]?.mainsnak.datavalue?.value;
   const coordinates = geo && typeof geo.latitude === "number" ? { latitude: geo.latitude, longitude: geo.longitude } : null;
   const info = await commonsInfo(files);

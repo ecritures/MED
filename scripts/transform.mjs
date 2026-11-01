@@ -78,7 +78,7 @@ async function enrich(doc) {
   const loadErrors = [];
   if (subjectId && !offline) {
     try {
-      heritage = await getHeritage(subjectId, lang);
+      heritage = await getHeritage(subjectId, lang, fm.img_uri);
     } catch (err) {
       loadErrors.push(err.message);
     }
