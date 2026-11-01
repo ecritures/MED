@@ -1,0 +1,21 @@
+filters:
+  and:
+    - file.inFolder("content")
+    - file.hasProperty("order")
+formulas:
+  wikidata_item: link("https://www.wikidata.org/wiki/" + wikidata, wikidata)
+properties:
+  formula.wikidata_item:
+    displayName: Wikidata
+views:
+  - type: table
+    name: Op volgorde
+    order:
+      - order
+      - file.name
+      - subtitle
+      - distance
+      - formula.wikidata_item
+    sort:
+      - property: order
+        direction: ASC
