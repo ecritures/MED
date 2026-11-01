@@ -10,7 +10,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { parseId, getEntityWithProperties, fetchJson, getEntities, pick, bestStatements } from "./wikidata.mjs";
-import { getHeritage } from "./heritage.mjs";
+import { getHeritage, galleryImages } from "./heritage.mjs";
 
 const ROOT = path.resolve(import.meta.dirname, "..");
 const IN = path.join(ROOT, "data", "json");
@@ -190,7 +190,13 @@ async function enrich(doc) {
   const links = {};
   for (const t of [...about, ...mentions]) if (t.sameAs) links[t.name] = t.sameAs[0];
 
-  return { ...doc, url: pageUrl, jsonld, links, wikidata: subject, heritage };
+  // Gallery under the map: Commons links listed under `gallery` in the note.
+  let gallery = [];
+  if (fm.gallery && !offline) {
+    try { gallery = await galleryImages(fm.gallery); }
+    catch (err) { console.warn(`  ! ${doc.id}: gallery: ${err.message}`); }
+  }
+  return { ...doc, url: pageUrl, jsonld, links, wikidata: subject, heritage, gallery };
 }
 
 async function enrichRemote(doc) {

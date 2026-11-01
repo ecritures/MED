@@ -5,6 +5,7 @@ subtitle: "Werelderfgoedlocatie in Antequera (Spanje)"
 order: 2
 distance: 35
 img_uri:
+gallery:
 site_uri: https://ecritures.github.io/MED/posts/dolmens-van-antequera/
 ---
 

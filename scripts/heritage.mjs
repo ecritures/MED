@@ -51,12 +51,12 @@ const yearOf = (snak) => {
   return m ? Number(m[1]) : null;
 };
 
-async function commonsInfo(files) {
+export async function commonsInfo(files, width = 900) {
   if (!files.length) return {};
   if (commonsFixture) return Object.fromEntries(files.map((f) => [f, commonsFixture[f] || {}]));
   const titles = files.map((f) => "File:" + f).join("|");
   const url = "https://commons.wikimedia.org/w/api.php?action=query&format=json&prop=imageinfo" +
-    `&iiprop=url|extmetadata&iiurlwidth=900&titles=${encodeURIComponent(titles)}`;
+    `&iiprop=url|extmetadata&iiurlwidth=${width}&titles=${encodeURIComponent(titles)}`;
   try {
     const pages = Object.values((await fetchJson(url)).query?.pages || {});
     const strip = (h = "") => h.replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
@@ -93,6 +93,21 @@ export function commonsFileName(value) {
   else if ((m = v.match(/Special:FilePath\/([^?#]+)/i))) v = m[1];
   v = v.replace(/^(File|Bestand|Image):/i, "").replace(/_/g, " ").trim();
   return v || null;
+}
+
+/** Gallery images from a list of Commons links (`gallery` in the note), with credits. */
+export async function galleryImages(list) {
+  const files = (Array.isArray(list) ? list : list ? [list] : []).map(commonsFileName).filter(Boolean);
+  if (!files.length) return [];
+  const info = await commonsInfo(files, 480);
+  return files.map((file) => ({
+    file,
+    src: info[file]?.thumb || commonsUrl(file, 480),
+    page: info[file]?.page || `https://commons.wikimedia.org/wiki/File:${encodeURIComponent(file.replace(/ /g, "_"))}`,
+    author: info[file]?.author || "",
+    license: info[file]?.license || "",
+    caption: info[file]?.caption || "",
+  }));
 }
 
 export async function getHeritage(qid, lang = "en", imageOverride = null) {

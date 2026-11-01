@@ -5,6 +5,7 @@ subtitle: "Werelderfgoedlocatie in Granada (Spanje)"
 order: 3
 distance: 48
 img_uri:
+gallery:
 site_uri: https://ecritures.github.io/MED/posts/alhambra-generalife-en-albaicin-granada/
 ---
 

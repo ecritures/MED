@@ -5,6 +5,7 @@ subtitle: "Werelderfgoedlocatie in Gibraltar (Verenigd Koninkrijk)"
 order: 1
 distance: 0
 img_uri:
+gallery:
 site_uri: https://ecritures.github.io/MED/posts/gorhams-grottencomplex/
 ---
 

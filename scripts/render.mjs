@@ -31,6 +31,8 @@ const TEXT = {
     lat: (v) => (v >= 0 ? "NB" : "ZB"), lon: (v) => (v >= 0 ? "OL" : "WL"),
     regions: { "Europe and North America": "Europa en Noord-Amerika", "Arab States": "Arabische Staten" },
     heritageIn: (c) => `UNESCO-werelderfgoed in ${c.length > 1 ? c.slice(0, -1).join(", ") + " en " + c.at(-1) : c[0]}`,
+    gallery: "Fotogalerij", galleryPrev: "Vorige foto's", galleryNext: "Volgende foto's", of: "van",
+    galleryCredit: "Foto's via Wikimedia Commons. Klik op een foto voor de maker en de licentie.",
     distance: "Afstand tot de Middellandse Zee", onCoast: "aan de kust",
     readMore: "Naar het artikel", onWikidata: "Bekijk op Wikidata",
     zoomIn: "Inzoomen", zoomOut: "Uitzoomen", openOsm: "Open in OpenStreetMap", mapOf: (l) => `Kaart van de omgeving van ${l}`,
@@ -51,6 +53,8 @@ const TEXT = {
     lat: (v) => (v >= 0 ? "N" : "S"), lon: (v) => (v >= 0 ? "E" : "W"),
     regions: {},
     heritageIn: (c) => `UNESCO World Heritage Site in ${c.length > 1 ? c.slice(0, -1).join(", ") + " and " + c.at(-1) : c[0]}`,
+    gallery: "Photo gallery", galleryPrev: "Previous photos", galleryNext: "Next photos", of: "of",
+    galleryCredit: "Photos via Wikimedia Commons. Click a photo for its author and licence.",
     distance: "Distance to the Mediterranean", onCoast: "on the coast",
     readMore: "Read the article", onWikidata: "View on Wikidata",
     zoomIn: "Zoom in", zoomOut: "Zoom out", openOsm: "Open in OpenStreetMap", mapOf: (l) => `Map of the area around ${l}`,
@@ -105,6 +109,7 @@ ${map ? `<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/lea
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>` : ""}
 <link rel="stylesheet" href="${href("assets/style.css")}">
 <script type="module" src="${href("assets/map.js")}"></script>
+<script type="module" src="${href("assets/gallery.js")}"></script>
 ${jsonld ? `<script type="application/ld+json">\n${JSON.stringify(jsonld, null, 2).replace(/</g, "\\u003c")}\n</script>` : ""}
 </head>
 <body>
@@ -182,6 +187,26 @@ function locationMap({ latitude: lat, longitude: lon }, label, widthKm = 200, qi
 </figure>`;
 }
 
+// ---------- Gallery: square Commons photos, three at a time ----------
+function galleryHtml(images = [], label = "") {
+  if (!images?.length) return "";
+  const items = images.map((img) => {
+    const credit = [img.author && T.photo(img.author), img.license].filter(Boolean).join(", ");
+    return `<li><a href="${esc(img.page)}" rel="noopener" title="${esc(credit ? credit + ". Wikimedia Commons" : "Wikimedia Commons")}">` +
+      `<img src="${esc(img.src)}" alt="${esc(img.caption || label)}" loading="lazy"></a></li>`;
+  }).join("");
+  const nav = images.length > 3 ? `<div class="h-gallery-nav" hidden>
+    <button type="button" data-dir="-1" aria-label="${T.galleryPrev}"><svg viewBox="0 0 12 16" width="10" height="14" aria-hidden="true"><path d="M9.5 1.5 3 8l6.5 6.5"/></svg></button>
+    <span class="h-gallery-count" aria-live="polite"></span>
+    <button type="button" data-dir="1" aria-label="${T.galleryNext}"><svg viewBox="0 0 12 16" width="10" height="14" aria-hidden="true"><path d="M2.5 1.5 9 8l-6.5 6.5"/></svg></button>
+  </div>` : "";
+  return `<figure class="h-gallery" data-of="${esc(T.of)}">
+  <ul class="h-gallery-track" aria-label="${T.gallery}">${items}</ul>
+  ${nav}
+  <figcaption>${T.galleryCredit}</figcaption>
+</figure>`;
+}
+
 // ---------- World Heritage record ----------
 // « previous · current · next », following the `order` numbers in the notes (1 comes before 2).
 function articleNav(d, seq) {
@@ -223,7 +248,8 @@ function heritageArticle(d, contentHtml, seq = []) {
   <figcaption>${credit ? `${credit}. ` : ""}<a href="${esc(img.page)}" rel="noopener">Wikimedia Commons</a></figcaption>
 </figure>`;
     })
-    .join("\n") + (h.coordinates ? "\n" + locationMap(h.coordinates, h.label, Number(d.frontmatter?.map_km) || config.mapWidthKm || 200, h.id) : "");
+    .join("\n") + (h.coordinates ? "\n" + locationMap(h.coordinates, h.label, Number(d.frontmatter?.map_km) || config.mapWidthKm || 200, h.id) : "")
+    + galleryHtml(d.gallery, h.label);
   return `<article class="heritage">
 <header class="h-head">
   <h1>${esc(d.title)}</h1>
