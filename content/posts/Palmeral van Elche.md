@@ -1,7 +1,7 @@
 ---
 wikidata: Q930784
-title: "Palmeral van Elche"
-subtitle: "Werelderfgoedlocatie in Elche (Spanje)"
+title: Palmeral van Elche
+subtitle: Werelderfgoedlocatie in Elche (Spanje)
 order: 5
 distance: 10
 img_uri:
