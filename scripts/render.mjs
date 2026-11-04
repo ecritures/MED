@@ -258,7 +258,7 @@ function articleNav(d, seq) {
   if (i < 0) return "";
   const prev = seq[i - 1], next = seq[i + 1];
   const chev = (dir) =>
-    `<svg class="h-nav-chev" viewBox="0 0 20 16" width="16" height="13" aria-hidden="true"><path d="${dir < 0 ? "M10 1.5 3.5 8 10 14.5M17 1.5 10.5 8 17 14.5" : "M3 1.5 9.5 8 3 14.5M10 1.5 16.5 8 10 14.5"}"/></svg>`;
+    `<svg class="h-nav-chev" viewBox="0 0 12 16" width="9" height="13" aria-hidden="true"><path d="${dir < 0 ? "M9.5 1.5 3 8l6.5 6.5" : "M2.5 1.5 9 8l-6.5 6.5"}"/></svg>`; // one < or >
   const up = parent ? `<a class="h-nav-up" href="${href(parent.path)}">${chev(-1)}<span>${T.partOfArticle} ${esc(parent.title)}</span></a>` : "";
   return `<nav class="h-nav${parent ? " has-up" : ""}" aria-label="${T.articleNav}">
   ${up}
