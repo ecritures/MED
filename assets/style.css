@@ -322,3 +322,18 @@ article::after { content: ""; display: block; clear: both; }
   background: var(--accent); color: var(--panel); text-decoration: none; /* light text: 6.5:1 on Pompeian red */
 }
 .card .card-country a:hover, .card .card-country a:focus-visible { background: #7f2e22; color: var(--panel); }
+
+/* ---------- Homepage cards: square photo on the right, text flows beside and below it ---------- */
+.card-home::after { content: ""; display: block; clear: both; }
+.card-home .card-text { margin: .2rem 0 0; color: var(--ink); font-size: .95rem; line-height: 1.6; }
+.card-home .card-more {
+  display: inline-flex; align-items: center; gap: .4rem; margin-top: .5rem;
+  color: var(--accent); text-decoration: none; font-size: .95rem;
+}
+.card-home .card-more:hover { text-decoration: underline; text-underline-offset: .2em; }
+.card-home .card-more svg { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.card-home .card-img {
+  float: right; width: 33%; margin: .45rem 0 .5rem 1rem; display: block;
+  aspect-ratio: 1; overflow: hidden; border-radius: 2px; background: var(--stone-deep);
+}
+.card-home .card-img img { width: 100%; height: 100%; object-fit: cover; }

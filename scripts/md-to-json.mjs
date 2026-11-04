@@ -57,7 +57,7 @@ const all = await walk(CONTENT);
 // Without history (or outside Git) the file's own modification time is used.
 const lastEdited = new Map();
 try {
-  const log = execFileSync("git", ["log", "--format=@%cI", "--name-only", "--", "content"], { cwd: ROOT, encoding: "utf8", maxBuffer: 64 * 1024 * 1024 });
+  const log = execFileSync("git", ["log", "--format=@%cI", "--name-only", "--", "content"], { cwd: ROOT, encoding: "utf8", maxBuffer: 64 * 1024 * 1024, stdio: ["ignore", "pipe", "ignore"] });
   let when = null;
   for (const line of log.split("\n")) {
     if (line.startsWith("@")) when = line.slice(1);
@@ -180,6 +180,11 @@ for (const n of notes) {
     type: fm.type || (n.rel.startsWith("posts/") ? "BlogPosting" : "WebPage"),
     title: fm.title || headings.find((h) => h.depth === 1)?.text || n.name,
     description: fm.description || plain.slice(0, 160),
+    // The first paragraph as plain text (for the cards on the homepage).
+    firstParagraph: (() => {
+      const p = tokens.find((t) => t.type === "paragraph");
+      return p ? marked.parseInline(p.text).replace(/<[^>]+>/g, "").replace(/&amp;/g, "&").replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/\s+/g, " ").trim() : "";
+    })(),
     date: toIsoDate(fm.date || fm.created),
     updated: toIsoDate(fm.updated || fm.modified),
     edited: n.edited, // last edit (Git history), used for "recently edited" lists
