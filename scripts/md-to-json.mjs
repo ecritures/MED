@@ -6,6 +6,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import matter from "gray-matter";
 import { marked } from "marked";
+import { execFileSync } from "node:child_process";
 
 const ROOT = path.resolve(import.meta.dirname, "..");
 const CONTENT = path.join(ROOT, "content");
@@ -50,6 +51,24 @@ function toList(v) {
 
 // ---------- Pass 1: read all notes and attachments ----------
 const all = await walk(CONTENT);
+
+// When was each note last edited? From the Git history (every Fit sync is a commit);
+// newest commit first, so the first date seen for a file is its latest edit.
+// Without history (or outside Git) the file's own modification time is used.
+const lastEdited = new Map();
+try {
+  const log = execFileSync("git", ["log", "--format=@%cI", "--name-only", "--", "content"], { cwd: ROOT, encoding: "utf8", maxBuffer: 64 * 1024 * 1024 });
+  let when = null;
+  for (const line of log.split("\n")) {
+    if (line.startsWith("@")) when = line.slice(1);
+    else if (line.trim() && !lastEdited.has(line.trim())) lastEdited.set(line.trim(), when);
+  }
+} catch {}
+const editedAt = async (file) => {
+  const rel = path.relative(ROOT, file).replace(/\\/g, "/");
+  if (lastEdited.has(rel)) return lastEdited.get(rel);
+  try { return (await fs.stat(file)).mtime.toISOString(); } catch { return null; }
+};
 const notes = [];
 const media = new Map(); // lowercased file name → { src, dest }
 
@@ -69,7 +88,7 @@ for (const file of all) {
   if (fm.slug) parts[parts.length - 1] = slugify(fm.slug);
   if (parts[parts.length - 1] === "index") parts.pop();
   const urlPath = parts.length ? parts.join("/") + "/" : "";
-  notes.push({ rel, relNoExt, fm, content, urlPath, name: path.basename(relNoExt) });
+  notes.push({ rel, relNoExt, fm, content, urlPath, name: path.basename(relNoExt), edited: await editedAt(file) });
 }
 
 // Obsidian resolves [[Note]] by file name, by path, or by alias.
@@ -163,6 +182,7 @@ for (const n of notes) {
     description: fm.description || plain.slice(0, 160),
     date: toIsoDate(fm.date || fm.created),
     updated: toIsoDate(fm.updated || fm.modified),
+    edited: n.edited, // last edit (Git history), used for "recently edited" lists
     author: fm.author || null,
     tags,
     entities: fm.entities || [], // e.g. ["Amsterdam", {name: "...", wikidata: "Q..."}]

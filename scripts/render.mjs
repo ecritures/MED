@@ -385,7 +385,9 @@ ${tagList(d)}
 
   if (isHome) body += overviewMap();
   if (isHome && posts.length) {
-    body += `<section><h2>${T.latest}</h2><ul class="cards">${posts.map((p) => postCard(p)).join("")}</ul></section>`;
+    // The five most recently edited articles, newest first.
+    const recent = [...posts].sort((a, b) => (b.edited || "").localeCompare(a.edited || "") || orderOf(a) - orderOf(b)).slice(0, 5);
+    body += `<section><h2>${T.latest}</h2><ul class="cards">${recent.map((p) => postCard(p)).join("")}</ul></section>`;
   }
   await write(d.path, layout({ title: d.title, description: d.description, url: d.url, jsonld: d.jsonld, body, map: isHome }));
 }
