@@ -41,7 +41,7 @@ const TEXT = {
     medMap: "Kaart van de Middellandse Zee met alle werelderfgoedlocaties", medMapCaption: "Klik op een cirkel voor de naam en het artikel.",
     readMore: "Naar het artikel", onWikidata: "Bekijk op Wikidata",
     zoomIn: "Inzoomen", zoomOut: "Uitzoomen", openOsm: "Open in OpenStreetMap", mapOf: (l) => `Kaart van de omgeving van ${l}`,
-    articleNav: "Artikelnavigatie", prev: "Vorig artikel", next: "Volgend artikel", current: "Huidig artikel",
+    articleNav: "Artikelnavigatie", prev: "Vorig artikel", next: "Volgend artikel", current: "Huidig artikel", partOfArticle: "Onderdeel van",
   },
   en: {
     home: "Home", posts: "Posts", tags: "Tags", countriesMenu: "Countries",
@@ -68,7 +68,7 @@ const TEXT = {
     medMap: "Map of the Mediterranean with every World Heritage location", medMapCaption: "Click a circle for its name and article.",
     readMore: "Read the article", onWikidata: "View on Wikidata",
     zoomIn: "Zoom in", zoomOut: "Zoom out", openOsm: "Open in OpenStreetMap", mapOf: (l) => `Map of the area around ${l}`,
-    articleNav: "Article navigation", prev: "Previous article", next: "Next article", current: "Current article",
+    articleNav: "Article navigation", prev: "Previous article", next: "Next article", current: "Current article", partOfArticle: "Part of",
   },
 };
 const T = TEXT[config.language] || TEXT.en;
@@ -251,12 +251,17 @@ function galleryHtml(images = [], label = "") {
 // ---------- World Heritage record ----------
 // « previous · current · next », following the `order` numbers in the notes (1 comes before 2).
 function articleNav(d, seq) {
+  // A sub-article: « previous · current · next » among its siblings, with a link up to the main article.
+  const parent = parentOf.get(d.id);
+  if (parent) seq = childrenOf.get(parent.id);
   const i = seq.indexOf(d);
   if (i < 0) return "";
   const prev = seq[i - 1], next = seq[i + 1];
   const chev = (dir) =>
     `<svg class="h-nav-chev" viewBox="0 0 20 16" width="16" height="13" aria-hidden="true"><path d="${dir < 0 ? "M10 1.5 3.5 8 10 14.5M17 1.5 10.5 8 17 14.5" : "M3 1.5 9.5 8 3 14.5M10 1.5 16.5 8 10 14.5"}"/></svg>`;
-  return `<nav class="h-nav" aria-label="${T.articleNav}">
+  const up = parent ? `<a class="h-nav-up" href="${href(parent.path)}">${chev(-1)}<span>${T.partOfArticle} ${esc(parent.title)}</span></a>` : "";
+  return `<nav class="h-nav${parent ? " has-up" : ""}" aria-label="${T.articleNav}">
+  ${up}
   <span class="h-nav-prev">${prev ? `<a href="${href(prev.path)}" rel="prev" aria-label="${esc(T.prev)}: ${esc(prev.title)}">${chev(-1)}<span>${esc(prev.title)}</span></a>` : ""}</span>
   <span class="h-nav-current" aria-current="page"><span class="visually-hidden">${T.current}: </span>${esc(d.title)}</span>
   <span class="h-nav-next">${next ? `<a href="${href(next.path)}" rel="next" aria-label="${esc(T.next)}: ${esc(next.title)}"><span>${esc(next.title)}</span>${chev(1)}</a>` : ""}</span>
@@ -332,6 +337,7 @@ function heritageArticle(d, contentHtml, seq = []) {
       <div class="h-text-area">
         <div class="h-text-scroll prose" tabindex="0" aria-label="${T.articleText}">
 ${contentHtml}
+${(childrenOf.get(d.id) || []).length ? `<ul class="h-subs">${childrenOf.get(d.id).map((c) => `<li><a href="${href(c.path)}">${esc(c.title)}</a></li>`).join("")}</ul>` : ""}
 ${textLinks.length ? `<div class="h-visit h-text-links"><h2>${T.readMoreLinks}</h2>${linkList(textLinks, "h-star")}</div>` : ""}
         </div>
       </div>
@@ -401,6 +407,30 @@ const docs = await Promise.all(
   (await fs.readdir(IN)).filter((f) => f.endsWith(".json")).map(async (f) => JSON.parse(await fs.readFile(path.join(IN, f), "utf8")))
 );
 // Records with an `order` number, in that order.
+// Sub-articles: a note with `part_of: "[[Werken van Gaudí]]"` gets a red button under the text
+// of that article. Matched on file name, title or alias, like Obsidian links; sorted by `sub_order`, then title.
+const docKey = (v) => String(v || "").toLowerCase().trim();
+const docByName = new Map();
+for (const d of docs) {
+  for (const k of [d.id.split("/").pop(), d.id, d.title, ...[].concat(d.frontmatter?.aliases || [])]) {
+    if (k && !docByName.has(docKey(k))) docByName.set(docKey(k), d);
+  }
+}
+const childrenOf = new Map();
+const parentOf = new Map();
+for (const d of docs) {
+  for (const ref of [].concat(d.frontmatter?.part_of || [])) {
+    const name = String(ref).match(/\[\[([^\]|#]+)/)?.[1] ?? String(ref);
+    const parent = docByName.get(docKey(name));
+    if (!parent || parent === d) continue;
+    if (!childrenOf.has(parent.id)) childrenOf.set(parent.id, []);
+    childrenOf.get(parent.id).push(d);
+    if (!parentOf.has(d.id)) parentOf.set(d.id, parent);
+  }
+}
+for (const list of childrenOf.values())
+  list.sort((a, b) => (Number(a.frontmatter?.sub_order) || Infinity) - (Number(b.frontmatter?.sub_order) || Infinity) || a.title.localeCompare(b.title, "nl"));
+
 const ordered = docs
   .filter((d) => d.frontmatter?.order !== undefined && Number.isFinite(Number(d.frontmatter.order)))
   .sort((a, b) => Number(a.frontmatter.order) - Number(b.frontmatter.order));

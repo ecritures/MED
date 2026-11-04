@@ -407,3 +407,22 @@ article::after { content: ""; display: block; clear: both; }
 
 /* "Home" in the main navigation on tablets and computers only (on phones the site name leads home). */
 @media (max-width: 600px) { .site-header nav .nav-home { display: none; } }
+
+/* Buttons to the sub-articles (notes with part_of), under the text. */
+.h-text-scroll .h-subs { list-style: none; margin: 1.6rem 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: .5rem; }
+.h-subs a {
+  display: inline-block; padding: .45rem .9rem; border-radius: 2px;
+  background: var(--accent); color: var(--panel); text-decoration: none; font-size: .95rem; line-height: 1.3;
+  transition: background-color .15s;
+}
+.h-subs a:hover, .h-subs a:focus-visible { background: #7f2e22; color: var(--panel); }
+@media (prefers-reduced-motion: reduce) { .h-subs a { transition: none; } }
+
+/* Sub-article: a link up to the main article, on its own row above « previous · current · next ». */
+.h-nav .h-nav-up {
+  grid-column: 1 / -1; justify-self: center; align-items: center;
+  padding: .45rem .9rem; border-radius: 2px; background: var(--accent); color: var(--panel); transition: background-color .15s;
+}
+.h-nav .h-nav-up:hover, .h-nav .h-nav-up:focus-visible { background: #7f2e22; }
+.h-nav .h-nav-up:hover span { text-decoration: none; }
+.h-nav .h-nav-up .h-nav-chev { stroke: currentColor; margin-top: 0; }
