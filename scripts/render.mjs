@@ -25,7 +25,7 @@ const TEXT = {
     dataFrom: "Gegevens van",
     region: "UNESCO-regio", country: "Land", countries: "Landen", inscribed: "Ingeschreven",
     notOnWikidata: "Niet op Wikidata", regionUnknown: "Onbekend voor dit land",
-    partOf: "Onderdeel van het werelderfgoed", visitSite: "Bekijk de erfgoedlocatie", viewUnesco: "Bekijk op de Werelderfgoedlijst van UNESCO",
+    partOf: "Onderdeel van het werelderfgoed", visitSite: "Bekijk de erfgoedlocatie", readMoreLinks: "Meer info", viewUnesco: "Bekijk op de Werelderfgoedlijst van UNESCO",
     photo: (a) => `Foto: ${a}`, articleText: "Artikeltekst", imageAndLocation: "Afbeelding en locatie",
     listing: "Werelderfgoed", openMap: (l) => `Open de locatie van ${l} op OpenStreetMap`,
     mapData: "Kaartgegevens ©", mapContributors: "OpenStreetMap-bijdragers",
@@ -51,7 +51,7 @@ const TEXT = {
     dataFrom: "Data from",
     region: "UNESCO region", country: "Country", countries: "Countries", inscribed: "Inscribed",
     notOnWikidata: "Not on Wikidata", regionUnknown: "Not known for this country",
-    partOf: "Part of the World Heritage site", visitSite: "Visit the heritage site", viewUnesco: "View on the UNESCO World Heritage List",
+    partOf: "Part of the World Heritage site", visitSite: "Visit the heritage site", readMoreLinks: "More info", viewUnesco: "View on the UNESCO World Heritage List",
     photo: (a) => `Photo by ${a}`, articleText: "Article text", imageAndLocation: "Image and location",
     listing: "World Heritage listing", openMap: (l) => `Open the location of ${l} on OpenStreetMap`,
     mapData: "Map data ©", mapContributors: "OpenStreetMap contributors",
@@ -269,8 +269,10 @@ function distanceHtml(value) {
   return `<div><dt>${T.distance}</dt><dd class="h-year h-distance">${shown}</dd></div>`;
 }
 
-// Links to the site itself (opening hours, tickets…), from `links` in the note, at most three.
-// Each item: "[Openingstijden](https://…) (es)" — link text, address, language code.
+// Two sets of links in a note, at most three each, every item written as
+// "[Openingstijden](https://…) (es)" — link text, address, language code:
+//   site_links  → "Bekijk de erfgoedlocatie" in the facts band (opening hours, tickets…)
+//   text_links  → "Meer info" under the text in the text box (after the Wikipedia article)
 function siteLinks(list) {
   const items = Array.isArray(list) ? list : list ? [list] : [];
   return items.map((item) => {
@@ -279,8 +281,19 @@ function siteLinks(list) {
   }).filter(Boolean).slice(0, 3);
 }
 
+const linkList = (links) => `<ul>${links.map((l) => `<li><a href="${esc(l.url)}" rel="noopener"${l.lang ? ` hreflang="${esc(l.lang)}"` : ""}>${esc(l.text)}</a>${l.lang ? ` <span class="h-lang">(${esc(l.lang)})</span>` : ""}</li>`).join("")}</ul>`;
+
 function heritageArticle(d, contentHtml, seq = []) {
-  const links = siteLinks(d.frontmatter?.links);
+  const links = siteLinks(d.frontmatter?.site_links);
+  let textLinks = siteLinks(d.frontmatter?.text_links);
+  // The Wikipedia article from the source line ("Bron: … Wikipedia, [Artikel](url), licentie …")
+  // goes first under "Meer info"; the source line keeps the name of the source and the licence.
+  contentHtml = contentHtml.replace(
+    /(<p>[^<]*Wikipedia), <a href="(https?:\/\/([a-z-]+)\.wikipedia\.org\/[^"]+)"[^>]*>([^<]+)<\/a>(, [^<]*<\/p>)/,
+    (_, before, url, lang, title, after) => {
+      textLinks = [{ text: title.replace(/&amp;/g, "&"), url: url.replace(/&amp;/g, "&"), lang }, ...textLinks];
+      return before + after;
+    });
   // Subtitle: `subtitle` in the note; otherwise the Wikidata description in the site language;
   // otherwise "World Heritage in <country>".
   const countryNames = d.heritage.countries.map((c) => c.label);
@@ -312,6 +325,7 @@ function heritageArticle(d, contentHtml, seq = []) {
       <div class="h-text-area">
         <div class="h-text-scroll prose" tabindex="0" aria-label="${T.articleText}">
 ${contentHtml}
+${textLinks.length ? `<div class="h-visit h-text-links"><h2>${T.readMoreLinks}</h2>${linkList(textLinks)}</div>` : ""}
         </div>
       </div>
       ${h.unescoUrl ? `<div class="h-text-foot"><a class="h-unesco" href="${esc(h.unescoUrl)}" rel="noopener"><svg class="h-chevron" viewBox="0 0 12 16" width="10" height="14" aria-hidden="true"><path d="M2 1.5 9.5 8 2 14.5"/></svg>${T.viewUnesco}</a></div>` : ""}
@@ -333,7 +347,7 @@ ${contentHtml}
     ${h.listedAs ? `<p class="h-part">${T.partOf} <a href="${esc(h.listedAs.url)}" rel="noopener">${esc(h.listedAs.label)}</a></p>` : ""}
     ${links.length ? `<div class="h-visit">
       <h2>${T.visitSite}</h2>
-      <ul>${links.map((l) => `<li><a href="${esc(l.url)}" rel="noopener"${l.lang ? ` hreflang="${esc(l.lang)}"` : ""}>${esc(l.text)}</a>${l.lang ? ` <span class="h-lang">(${esc(l.lang)})</span>` : ""}</li>`).join("")}</ul>
+      ${linkList(links)}
     </div>` : ""}
   </div>` : ""}
 </section>

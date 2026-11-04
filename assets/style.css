@@ -390,3 +390,8 @@ article::after { content: ""; display: block; clear: both; }
   .h-facts-bottom { grid-template-columns: 1fr; }
   .h-facts-bottom .h-part, .h-visit { grid-column: 1; }
 }
+
+/* "Meer lezen" links under the text, styled like the links in the facts band. */
+.h-text-scroll .h-text-links { margin-top: 1.8rem; padding-top: 1.2rem; border-top: 1px solid var(--rule); }
+.h-text-scroll .h-text-links h2 { margin: 0 0 .45rem; font: 400 .85rem/1.4 var(--text); color: var(--muted); }
+.h-text-scroll .h-text-links ul { margin: 0; padding: 0; }
