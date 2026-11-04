@@ -132,7 +132,7 @@ ${jsonld ? `<script type="application/ld+json">\n${JSON.stringify(jsonld, null, 
 <header class="site-header">
   <a class="site-title" href="${href()}">${esc(config.title)}${LOGO_WAVES}</a>
   <nav>
-    <a href="${href("posts/")}">${T.posts}</a>
+    <a class="nav-home" href="${href()}">${T.home}</a>
     ${MENU_COUNTRIES.length ? `<details class="nav-menu">
       <summary>${T.countriesMenu}</summary>
       <ul>${MENU_COUNTRIES.map((c) => `<li><a href="${href(`landen/${slugify(c)}/`)}">${esc(c)}</a></li>`).join("")}</ul>

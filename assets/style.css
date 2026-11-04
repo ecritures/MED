@@ -404,3 +404,6 @@ article::after { content: ""; display: block; clear: both; }
 .h-text-foot > .h-text-origin:first-child { margin-top: 0; padding-top: 0; border-top: 0; }
 .h-text-origin a { color: var(--accent); }
 .h-text-origin a:hover { color: #7f2e22; }
+
+/* "Home" in the main navigation on tablets and computers only (on phones the site name leads home). */
+@media (max-width: 600px) { .site-header nav .nav-home { display: none; } }
