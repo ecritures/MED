@@ -298,15 +298,18 @@ function heritageArticle(d, contentHtml, seq = []) {
 <div class="h-body${figures ? "" : " no-images"}">
   <div class="h-main">
     <div class="h-text">
-      <div class="h-text-scroll prose" tabindex="0" aria-label="${T.articleText}">
+      <div class="h-text-area">
+        <div class="h-text-scroll prose" tabindex="0" aria-label="${T.articleText}">
 ${contentHtml}
+        </div>
       </div>
+      ${h.unescoUrl ? `<div class="h-text-foot"><a class="h-unesco" href="${esc(h.unescoUrl)}" rel="noopener"><svg class="h-chevron" viewBox="0 0 12 16" width="10" height="14" aria-hidden="true"><path d="M2 1.5 9.5 8 2 14.5"/></svg>${T.viewUnesco}</a></div>` : ""}
     </div>
     ${articleNav(d, seq)}
   </div>
   ${figures ? `<aside class="h-images" aria-label="${T.imageAndLocation}">\n${figures}\n</aside>` : ""}
 </div>
-<section class="h-facts" aria-label="${T.listing}">
+<section class="h-facts${h.listedAs ? "" : " no-bottom"}" aria-label="${T.listing}">
   <div class="h-facts-top">
   <dl class="h-meta">
     <div><dt>${T.region}</dt><dd>${regions}</dd></div>
@@ -315,10 +318,9 @@ ${contentHtml}
     ${distanceHtml(d.frontmatter?.distance)}
   </dl>
   </div>
-  <div class="h-facts-bottom">
-    ${h.listedAs ? `<p class="h-part">${T.partOf} <a href="${esc(h.listedAs.url)}" rel="noopener">${esc(h.listedAs.label)}</a></p>` : ""}
-    <a class="h-unesco" href="${esc(h.unescoUrl)}" rel="noopener"><svg class="h-chevron" viewBox="0 0 12 16" width="10" height="14" aria-hidden="true"><path d="M2 1.5 9.5 8 2 14.5"/></svg>${T.viewUnesco}</a>
-  </div>
+  ${h.listedAs ? `<div class="h-facts-bottom">
+    <p class="h-part">${T.partOf} <a href="${esc(h.listedAs.url)}" rel="noopener">${esc(h.listedAs.label)}</a></p>
+  </div>` : ""}
 </section>
 ${tagList(d)}
 </article>`;
