@@ -196,7 +196,30 @@ async function enrich(doc) {
     try { gallery = await galleryImages(fm.gallery); }
     catch (err) { console.warn(`  ! ${doc.id}: gallery: ${err.message}`); }
   }
-  return { ...doc, url: pageUrl, jsonld, links, wikidata: subject, heritage, gallery };
+  const wikipedia = await wikipediaSource(doc);
+  return { ...doc, url: pageUrl, jsonld, links, wikidata: subject, heritage, gallery, wikipedia };
+}
+
+// The Wikipedia article in the source line ("Bron: … Wikipedia, [Artikel](https://nl.wikipedia.org/wiki/…), licentie …"),
+// with a permanent link (oldid) to the version of that day: the last revision before the note was first committed.
+// `wikipedia_oldid` in the note overrides the lookup.
+async function wikipediaSource(doc) {
+  const m = doc.markdown?.match(/\[([^\]]+)\]\((https?:\/\/([a-z-]+)\.wikipedia\.org\/wiki\/([^)\s]+))\)/);
+  if (!m) return null;
+  const [, text, url, wpLang, pathTitle] = m;
+  const title = decodeURIComponent(pathTitle).replace(/_/g, " ");
+  const licence = doc.markdown.match(/licentie\s+([^.\n]+(?:\.\d+)?)/i)?.[1]?.trim() || "CC BY-SA 4.0";
+  const permalink = (oldid) => `https://${wpLang}.wikipedia.org/w/index.php?title=${encodeURIComponent(title.replace(/ /g, "_"))}&oldid=${oldid}`;
+  let oldid = doc.frontmatter?.wikipedia_oldid ? String(doc.frontmatter.wikipedia_oldid) : null;
+  if (!oldid && !offline && !process.env.WIKIDATA_FIXTURE) {
+    const at = doc.created || new Date().toISOString();
+    try {
+      const api = `https://${wpLang}.wikipedia.org/w/api.php?action=query&format=json&formatversion=2&redirects=1` +
+        `&prop=revisions&rvprop=ids|timestamp&rvlimit=1&rvdir=older&rvstart=${encodeURIComponent(at)}&titles=${encodeURIComponent(title)}`;
+      oldid = String((await fetchJson(api)).query?.pages?.[0]?.revisions?.[0]?.revid || "") || null;
+    } catch (err) { console.warn(`  ! ${doc.id}: Wikipedia revision: ${err.message}`); }
+  }
+  return { text, title, url, lang: wpLang, licence, oldid, versionUrl: oldid ? permalink(oldid) : url };
 }
 
 async function enrichRemote(doc) {

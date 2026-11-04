@@ -25,7 +25,8 @@ const TEXT = {
     dataFrom: "Gegevens van",
     region: "UNESCO-regio", country: "Land", countries: "Landen", inscribed: "Ingeschreven",
     notOnWikidata: "Niet op Wikidata", regionUnknown: "Onbekend voor dit land",
-    partOf: "Onderdeel van het werelderfgoed", visitSite: "Bekijk de erfgoedlocatie", readMoreLinks: "Meer info", viewUnesco: "Bekijk op de Werelderfgoedlijst van UNESCO",
+    partOf: "Onderdeel van het werelderfgoed", visitSite: "Bekijk de erfgoedlocatie", readMoreLinks: "Meer info", wikipediaPrefix: "Wikipedia:",
+    textOrigin: (wp, lic) => `De tekst van dit artikel is oorspronkelijk afkomstig van ${wp}${lic ? ` (licentie ${lic})` : ""}.`, viewUnesco: "Bekijk op de Werelderfgoedlijst van UNESCO",
     photo: (a) => `Foto: ${a}`, articleText: "Artikeltekst", imageAndLocation: "Afbeelding en locatie",
     listing: "Werelderfgoed", openMap: (l) => `Open de locatie van ${l} op OpenStreetMap`,
     mapData: "Kaartgegevens ©", mapContributors: "OpenStreetMap-bijdragers",
@@ -51,7 +52,8 @@ const TEXT = {
     dataFrom: "Data from",
     region: "UNESCO region", country: "Country", countries: "Countries", inscribed: "Inscribed",
     notOnWikidata: "Not on Wikidata", regionUnknown: "Not known for this country",
-    partOf: "Part of the World Heritage site", visitSite: "Visit the heritage site", readMoreLinks: "More info", viewUnesco: "View on the UNESCO World Heritage List",
+    partOf: "Part of the World Heritage site", visitSite: "Visit the heritage site", readMoreLinks: "More info", wikipediaPrefix: "Wikipedia:",
+    textOrigin: (wp, lic) => `The text of this article was originally taken from ${wp}${lic ? ` (licence ${lic})` : ""}.`, viewUnesco: "View on the UNESCO World Heritage List",
     photo: (a) => `Photo by ${a}`, articleText: "Article text", imageAndLocation: "Image and location",
     listing: "World Heritage listing", openMap: (l) => `Open the location of ${l} on OpenStreetMap`,
     mapData: "Map data ©", mapContributors: "OpenStreetMap contributors",
@@ -281,19 +283,24 @@ function siteLinks(list) {
   }).filter(Boolean).slice(0, 3);
 }
 
-const linkList = (links) => `<ul>${links.map((l) => `<li><a href="${esc(l.url)}" rel="noopener"${l.lang ? ` hreflang="${esc(l.lang)}"` : ""}>${esc(l.text)}</a>${l.lang ? ` <span class="h-lang">(${esc(l.lang)})</span>` : ""}</li>`).join("")}</ul>`;
+const linkList = (links, cls = "") => `<ul${cls ? ` class="${cls}"` : ""}>${links.map((l) => `<li>${l.prefix ? `${esc(l.prefix)} ` : ""}<a href="${esc(l.url)}" rel="noopener"${l.lang ? ` hreflang="${esc(l.lang)}"` : ""}>${esc(l.text)}</a>${l.lang ? ` <span class="h-lang">(${esc(l.lang)})</span>` : ""}</li>`).join("")}</ul>`;
 
 function heritageArticle(d, contentHtml, seq = []) {
   const links = siteLinks(d.frontmatter?.site_links);
   let textLinks = siteLinks(d.frontmatter?.text_links);
   // The Wikipedia article from the source line ("Bron: … Wikipedia, [Artikel](url), licentie …")
   // goes first under "Meer info"; the source line keeps the name of the source and the licence.
+  // The source line itself is replaced by the small "originally taken from Wikipedia" line at the bottom of the box.
+  let wp = d.wikipedia || null;
   contentHtml = contentHtml.replace(
-    /(<p>[^<]*Wikipedia), <a href="(https?:\/\/([a-z-]+)\.wikipedia\.org\/[^"]+)"[^>]*>([^<]+)<\/a>(, [^<]*<\/p>)/,
-    (_, before, url, lang, title, after) => {
-      textLinks = [{ text: title.replace(/&amp;/g, "&"), url: url.replace(/&amp;/g, "&"), lang }, ...textLinks];
-      return before + after;
+    /<p>[^<]*Wikipedia, <a href="(https?:\/\/([a-z-]+)\.wikipedia\.org\/[^"]+)"[^>]*>([^<]+)<\/a>, ([^<]*)<\/p>\n?/,
+    (_, url, lang, title, rest) => {
+      url = url.replace(/&amp;/g, "&");
+      wp ||= { url, versionUrl: url, lang, licence: rest.replace(/^licentie\s+/i, "").replace(/\.$/, "") };
+      textLinks = [{ prefix: T.wikipediaPrefix, text: title.replace(/&amp;/g, "&"), url, lang }, ...textLinks];
+      return "";
     });
+  const origin = wp ? `<p class="h-text-origin">${T.textOrigin(`<a href="${esc(wp.versionUrl)}" rel="noopener">Wikipedia</a>`, esc(wp.licence || ""))}</p>` : "";
   // Subtitle: `subtitle` in the note; otherwise the Wikidata description in the site language;
   // otherwise "World Heritage in <country>".
   const countryNames = d.heritage.countries.map((c) => c.label);
@@ -328,7 +335,7 @@ ${contentHtml}
 ${textLinks.length ? `<div class="h-visit h-text-links"><h2>${T.readMoreLinks}</h2>${linkList(textLinks)}</div>` : ""}
         </div>
       </div>
-      ${h.unescoUrl ? `<div class="h-text-foot"><a class="h-unesco" href="${esc(h.unescoUrl)}" rel="noopener"><svg class="h-chevron" viewBox="0 0 12 16" width="10" height="14" aria-hidden="true"><path d="M2 1.5 9.5 8 2 14.5"/></svg>${T.viewUnesco}</a></div>` : ""}
+      ${h.unescoUrl || origin ? `<div class="h-text-foot">${h.unescoUrl ? `<a class="h-unesco" href="${esc(h.unescoUrl)}" rel="noopener"><svg class="h-chevron" viewBox="0 0 12 16" width="10" height="14" aria-hidden="true"><path d="M2 1.5 9.5 8 2 14.5"/></svg>${T.viewUnesco}</a>` : ""}${origin}</div>` : ""}
     </div>
     ${articleNav(d, seq)}
   </div>
@@ -347,7 +354,7 @@ ${textLinks.length ? `<div class="h-visit h-text-links"><h2>${T.readMoreLinks}</
     ${h.listedAs ? `<p class="h-part">${T.partOf} <a href="${esc(h.listedAs.url)}" rel="noopener">${esc(h.listedAs.label)}</a></p>` : ""}
     ${links.length ? `<div class="h-visit">
       <h2>${T.visitSite}</h2>
-      ${linkList(links)}
+      ${linkList(links, "h-star")}
     </div>` : ""}
   </div>` : ""}
 </section>

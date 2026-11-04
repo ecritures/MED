@@ -56,12 +56,16 @@ const all = await walk(CONTENT);
 // newest commit first, so the first date seen for a file is its latest edit.
 // Without history (or outside Git) the file's own modification time is used.
 const lastEdited = new Map();
+const firstCommitted = new Map(); // oldest commit per file: when the note was created
 try {
   const log = execFileSync("git", ["log", "--format=@%cI", "--name-only", "--", "content"], { cwd: ROOT, encoding: "utf8", maxBuffer: 64 * 1024 * 1024, stdio: ["ignore", "pipe", "ignore"] });
   let when = null;
   for (const line of log.split("\n")) {
     if (line.startsWith("@")) when = line.slice(1);
-    else if (line.trim() && !lastEdited.has(line.trim())) lastEdited.set(line.trim(), when);
+    else if (line.trim()) {
+      if (!lastEdited.has(line.trim())) lastEdited.set(line.trim(), when);
+      firstCommitted.set(line.trim(), when); // keeps overwriting, so the oldest commit wins
+    }
   }
 } catch {}
 const editedAt = async (file) => {
@@ -88,7 +92,9 @@ for (const file of all) {
   if (fm.slug) parts[parts.length - 1] = slugify(fm.slug);
   if (parts[parts.length - 1] === "index") parts.pop();
   const urlPath = parts.length ? parts.join("/") + "/" : "";
-  notes.push({ rel, relNoExt, fm, content, urlPath, name: path.basename(relNoExt), edited: await editedAt(file) });
+  const relRoot = path.relative(ROOT, file).replace(/\\/g, "/");
+  notes.push({ rel, relNoExt, fm, content, urlPath, name: path.basename(relNoExt), edited: await editedAt(file),
+    created: firstCommitted.get(relRoot) || null });
 }
 
 // Obsidian resolves [[Note]] by file name, by path, or by alias.
@@ -188,6 +194,7 @@ for (const n of notes) {
     date: toIsoDate(fm.date || fm.created),
     updated: toIsoDate(fm.updated || fm.modified),
     edited: n.edited, // last edit (Git history), used for "recently edited" lists
+    created: fm.created ? new Date(fm.created).toISOString() : n.created, // first commit (Git history), or `created` in the note
     author: fm.author || null,
     tags,
     entities: fm.entities || [], // e.g. ["Amsterdam", {name: "...", wikidata: "Q..."}]
