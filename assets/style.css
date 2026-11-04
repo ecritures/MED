@@ -35,10 +35,11 @@ img { max-width: 100%; height: auto; display: block; }
   display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: .5rem 2rem;
   padding: 1.6rem 0 1.2rem; border-bottom: 1px solid var(--rule);
 }
-.site-title { font: 1.5rem/1 var(--display); letter-spacing: .14em; color: var(--ink); text-decoration: none; }
+.site-title { font: 1.5rem/1 var(--display); letter-spacing: .14em; color: var(--ink); text-decoration: none; display: inline-flex; align-items: flex-end; gap: .45rem; }
+.logo-waves { height: .78em; width: auto; aspect-ratio: 484 / 116; fill: #fff; margin-bottom: .02em; }
 .site-header nav { display: flex; gap: 1.4rem; font-size: .95rem; }
-.site-header nav a { color: var(--muted); text-decoration: none; }
-.site-header nav a:hover { color: var(--ink); }
+.site-header nav a { color: var(--accent); text-decoration: none; }
+.site-header nav a:hover { color: #7f2e22; text-decoration: underline; text-underline-offset: .2em; }
 main { padding: 3rem 0 4rem; }
 .site-footer { border-top: 1px solid var(--rule); padding: 1.2rem 0 2.5rem; color: var(--muted); font-size: .85rem; }
 
@@ -295,14 +296,14 @@ article::after { content: ""; display: block; clear: both; }
 /* ---------- "Landen" menu ---------- */
 .site-header nav { align-items: baseline; }
 .nav-menu { position: relative; }
-.nav-menu summary { list-style: none; cursor: pointer; color: var(--muted); display: inline-flex; align-items: center; gap: .35rem; }
+.nav-menu summary { list-style: none; cursor: pointer; color: var(--accent); display: inline-flex; align-items: center; gap: .35rem; }
 .nav-menu summary::-webkit-details-marker { display: none; }
 .nav-menu summary::after {
   content: ""; width: .4rem; height: .4rem; margin-top: -.2rem;
   border-right: 1.5px solid currentColor; border-bottom: 1.5px solid currentColor; transform: rotate(45deg);
 }
 .nav-menu[open] summary::after { transform: rotate(-135deg); margin-top: .2rem; }
-.nav-menu summary:hover, .nav-menu[open] summary { color: var(--ink); }
+.nav-menu summary:hover, .nav-menu[open] summary { color: #7f2e22; }
 .nav-menu ul {
   position: absolute; right: 0; top: calc(100% + .6rem); z-index: 1000; min-width: 11rem;
   list-style: none; margin: 0; padding: .35rem 0;
