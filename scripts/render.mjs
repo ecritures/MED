@@ -17,7 +17,8 @@ const href = (p = "") => basePath + p;
 // ---------- Interface text (site.config.json → "language") ----------
 const TEXT = {
   nl: {
-    home: "Home", posts: "Artikelen", tags: "Trefwoorden",
+    home: "Home", posts: "Artikelen", tags: "Trefwoorden", countriesMenu: "Landen",
+    countryIntro: (c) => `Werelderfgoed in ${c} langs de Middellandse Zee.`, noArticles: "Hier komen binnenkort artikelen.",
     latest: "Nieuwste artikelen", allPosts: (s) => `Alle artikelen op ${s}`, allTags: (s) => `Alle trefwoorden op ${s}`,
     tag: (t) => `Trefwoord: ${t}`, pagesAbout: (t) => `Pagina's over ${t}`, linkedTo: "Gekoppeld aan",
     notFound: "Pagina niet gevonden", notFoundText: "Deze pagina bestaat niet.", goHome: "Naar de homepage",
@@ -39,7 +40,8 @@ const TEXT = {
     articleNav: "Artikelnavigatie", prev: "Vorig artikel", next: "Volgend artikel", current: "Huidig artikel",
   },
   en: {
-    home: "Home", posts: "Posts", tags: "Tags",
+    home: "Home", posts: "Posts", tags: "Tags", countriesMenu: "Countries",
+    countryIntro: (c) => `World Heritage in ${c} along the Mediterranean.`, noArticles: "Articles will appear here soon.",
     latest: "Latest posts", allPosts: (s) => `All posts on ${s}`, allTags: (s) => `All tags on ${s}`,
     tag: (t) => `Tag: ${t}`, pagesAbout: (t) => `Pages about ${t}`, linkedTo: "Linked to",
     notFound: "Page not found", notFoundText: "This page does not exist.", goHome: "Go to the home page",
@@ -62,6 +64,7 @@ const TEXT = {
   },
 };
 const T = TEXT[config.language] || TEXT.en;
+const MENU_COUNTRIES = config.menuCountries || [];
 const num = (v, digits) => v.toLocaleString(config.language, { minimumFractionDigits: digits, maximumFractionDigits: digits });
 
 const esc = (s = "") =>
@@ -110,12 +113,19 @@ ${map ? `<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/lea
 <link rel="stylesheet" href="${href("assets/style.css")}">
 <script type="module" src="${href("assets/map.js")}"></script>
 <script type="module" src="${href("assets/gallery.js")}"></script>
+<script type="module" src="${href("assets/menu.js")}"></script>
 ${jsonld ? `<script type="application/ld+json">\n${JSON.stringify(jsonld, null, 2).replace(/</g, "\\u003c")}\n</script>` : ""}
 </head>
 <body>
 <header class="site-header">
   <a class="site-title" href="${href()}">${esc(config.title)}</a>
-  <nav><a href="${href("posts/")}">${T.posts}</a></nav>
+  <nav>
+    <a href="${href("posts/")}">${T.posts}</a>
+    ${MENU_COUNTRIES.length ? `<details class="nav-menu">
+      <summary>${T.countriesMenu}</summary>
+      <ul>${MENU_COUNTRIES.map((c) => `<li><a href="${href(`landen/${slugify(c)}/`)}">${esc(c)}</a></li>`).join("")}</ul>
+    </details>` : ""}
+  </nav>
 </header>
 <main>
 ${body}
@@ -346,6 +356,24 @@ ${tagList(d)}
     body += `<section><h2>${T.latest}</h2><ul class="cards">${posts.slice(0, 5).map(postCard).join("")}</ul></section>`;
   }
   await write(d.path, layout({ title: d.title, description: d.description, url: d.url, jsonld: d.jsonld, body }));
+}
+
+// ---------- Country pages (menu "Landen") ----------
+// Articles are placed by their country on Wikidata (P17), in `order`.
+for (const country of MENU_COUNTRIES) {
+  const list = docs
+    .filter((d) => d.heritage?.countries?.some((c) => c.label === country))
+    .sort((a, b) => (Number(a.frontmatter?.order) || 1e9) - (Number(b.frontmatter?.order) || 1e9));
+  const url = baseUrl + `landen/${slugify(country)}/`;
+  await write(`landen/${slugify(country)}`, layout({
+    title: country,
+    description: T.countryIntro(country),
+    url,
+    jsonld: { "@context": "https://schema.org", "@type": "CollectionPage", "@id": url, url, name: country,
+      isPartOf: { "@id": baseUrl + "#website" }, hasPart: list.map((d) => ({ "@id": d.url + "#main" })) },
+    body: `<div class="prose"><h1>${esc(country)}</h1><p class="lede">${esc(T.countryIntro(country))}</p></div>` +
+      (list.length ? `<ul class="cards">${list.map(postCard).join("")}</ul>` : `<p class="meta">${T.noArticles}</p>`),
+  }));
 }
 
 // ---------- Posts index ----------
