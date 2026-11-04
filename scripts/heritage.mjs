@@ -99,10 +99,13 @@ export function commonsFileName(value) {
 export async function galleryImages(list) {
   const files = (Array.isArray(list) ? list : list ? [list] : []).map(commonsFileName).filter(Boolean);
   if (!files.length) return [];
-  const info = await commonsInfo(files, 480);
+  // One request at 1600 px for the large view; the square thumbnails use a 480 px version of the same file.
+  const info = await commonsInfo(files, 1600);
+  const small = (thumb) => (thumb && /\/1600px-/.test(thumb) ? thumb.replace("/1600px-", "/480px-") : null);
   return files.map((file) => ({
     file,
-    src: info[file]?.thumb || commonsUrl(file, 480),
+    src: small(info[file]?.thumb) || commonsUrl(file, 480),
+    large: info[file]?.thumb || commonsUrl(file, 1600),
     page: info[file]?.page || `https://commons.wikimedia.org/wiki/File:${encodeURIComponent(file.replace(/ /g, "_"))}`,
     author: info[file]?.author || "",
     license: info[file]?.license || "",

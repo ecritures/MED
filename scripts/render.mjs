@@ -33,7 +33,8 @@ const TEXT = {
     regions: { "Europe and North America": "Europa en Noord-Amerika", "Arab States": "Arabische Staten" },
     heritageIn: (c) => `UNESCO-werelderfgoed in ${c.length > 1 ? c.slice(0, -1).join(", ") + " en " + c.at(-1) : c[0]}`,
     gallery: "Fotogalerij", galleryPrev: "Vorige foto's", galleryNext: "Volgende foto's", of: "van",
-    galleryCredit: "Foto's via Wikimedia Commons. Klik op een foto voor de maker en de licentie.",
+    galleryCredit: "Klik op een foto voor de naam van de maker.",
+    viewOnCommons: "Bekijk de afbeelding op Wikimedia Commons", closePhoto: "Sluiten", photoUnknown: "Maker onbekend",
     distance: "Afstand tot de Middellandse Zee", onCoast: "aan de kust",
     readOn: "Lees verder", readMoreAbout: (t) => `Lees verder over ${t}`,
     medMap: "Kaart van de Middellandse Zee met alle werelderfgoedlocaties", medMapCaption: "Klik op een cirkel voor de naam en het artikel.",
@@ -58,7 +59,8 @@ const TEXT = {
     regions: {},
     heritageIn: (c) => `UNESCO World Heritage Site in ${c.length > 1 ? c.slice(0, -1).join(", ") + " and " + c.at(-1) : c[0]}`,
     gallery: "Photo gallery", galleryPrev: "Previous photos", galleryNext: "Next photos", of: "of",
-    galleryCredit: "Photos via Wikimedia Commons. Click a photo for its author and licence.",
+    galleryCredit: "Click a photo for the name of its author.",
+    viewOnCommons: "View the image on Wikimedia Commons", closePhoto: "Close", photoUnknown: "Author unknown",
     distance: "Distance to the Mediterranean", onCoast: "on the coast",
     readOn: "Read more", readMoreAbout: (t) => `Read more about ${t}`,
     medMap: "Map of the Mediterranean with every World Heritage location", medMapCaption: "Click a circle for its name and article.",
@@ -227,8 +229,9 @@ function locationMap({ latitude: lat, longitude: lon }, label, widthKm = 200, qi
 function galleryHtml(images = [], label = "") {
   if (!images?.length) return "";
   const items = images.map((img) => {
-    const credit = [img.author && T.photo(img.author), img.license].filter(Boolean).join(", ");
-    return `<li><a href="${esc(img.page)}" rel="noopener" title="${esc(credit ? credit + ". Wikimedia Commons" : "Wikimedia Commons")}">` +
+    const credit = [img.author ? T.photo(img.author) : T.photoUnknown, img.license].filter(Boolean).join(", ");
+    // Clicking opens the photo large on this site (assets/gallery.js); without JavaScript the link goes to Commons.
+    return `<li><a href="${esc(img.page)}" rel="noopener" data-full="${esc(img.large || img.src)}" data-credit="${esc(credit)}">` +
       `<img src="${esc(img.src)}" alt="${esc(img.caption || label)}" loading="lazy"></a></li>`;
   }).join("");
   const nav = images.length > 3 ? `<div class="h-gallery-nav" hidden>
@@ -236,7 +239,7 @@ function galleryHtml(images = [], label = "") {
     <span class="h-gallery-count" aria-live="polite"></span>
     <button type="button" data-dir="1" aria-label="${T.galleryNext}"><svg viewBox="0 0 12 16" width="10" height="14" aria-hidden="true"><path d="M2.5 1.5 9 8l-6.5 6.5"/></svg></button>
   </div>` : "";
-  return `<figure class="h-gallery" data-of="${esc(T.of)}">
+  return `<figure class="h-gallery" data-of="${esc(T.of)}" data-commons="${esc(T.viewOnCommons)}" data-close="${esc(T.closePhoto)}">
   <ul class="h-gallery-track" aria-label="${T.gallery}">${items}</ul>
   ${nav}
   <figcaption>${T.galleryCredit}</figcaption>

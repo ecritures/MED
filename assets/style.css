@@ -346,3 +346,19 @@ article::after { content: ""; display: block; clear: both; }
   background: var(--stone) url("golven-rij.svg") repeat-x left bottom .35rem / auto 1.45rem;
   border-radius: 2px;
 }
+
+/* ---------- Gallery photo opened large on the page ---------- */
+.h-lightbox { border: 0; padding: 0; background: transparent; max-width: min(92vw, 70rem); max-height: 92vh; overflow: visible; }
+.h-lightbox::backdrop { background: rgb(29 43 51 / .82); }
+.h-lightbox figure { margin: 0; position: relative; background: var(--panel); padding: .75rem .75rem 1rem; border-radius: 2px; box-shadow: 0 10px 40px rgb(0 0 0 / .35); }
+.h-lightbox img { display: block; max-width: 100%; max-height: calc(92vh - 7rem); width: auto; height: auto; margin: 0 auto; background: var(--stone-deep); }
+.h-lightbox figcaption { margin-top: .7rem; font-size: .9rem; line-height: 1.5; color: var(--ink); display: flex; flex-direction: column; gap: .35rem; }
+.h-lightbox-commons { display: inline-flex; align-items: center; gap: .45rem; color: var(--accent); text-decoration: none; }
+.h-lightbox-commons:hover { color: #7f2e22; text-decoration: underline; text-underline-offset: .2em; }
+.h-lightbox-commons svg, .h-lightbox-close svg { fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.h-lightbox-close {
+  position: absolute; top: -.9rem; right: -.9rem; width: 2.2rem; height: 2.2rem; display: grid; place-items: center;
+  background: var(--accent); color: #fff; border: 0; border-radius: 50%; cursor: pointer; box-shadow: 0 2px 8px rgb(0 0 0 / .3);
+}
+.h-lightbox-close:hover { background: #7f2e22; }
+@media (max-width: 480px) { .h-lightbox-close { top: .4rem; right: .4rem; } }
