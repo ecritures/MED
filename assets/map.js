@@ -66,7 +66,19 @@ function interactiveMap(frame) {
   L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 18, minZoom: 3 }).addTo(map);
   // Start with about `km` kilometres from left to right, centred on this site.
   const dLon = km / 2 / (111.32 * Math.cos((lat * Math.PI) / 180));
-  map.fitBounds([[lat, lon - dLon], [lat, lon + dLon]], { padding: [0, 0] });
+  const overview = frame.dataset.overview ? JSON.parse(frame.dataset.overview) : null;
+  if (overview) map.fitBounds(overview, { padding: [6, 6] }); // the whole Mediterranean
+  // Redraw when the map becomes visible or changes size (e.g. turning a phone).
+  if (overview && "ResizeObserver" in window) {
+    let w = el.clientWidth;
+    new ResizeObserver(() => {
+      if (!el.clientWidth || el.clientWidth === w) return;
+      w = el.clientWidth;
+      map.invalidateSize();
+      map.fitBounds(overview, { padding: [6, 6] });
+    }).observe(el);
+  }
+  else map.fitBounds([[lat, lon - dLon], [lat, lon + dLon]], { padding: [0, 0] });
   // Scrolling the page should not get stuck on the map: the wheel zooms only after a click on the map.
   map.on("click", () => map.scrollWheelZoom.enable());
   map.on("mouseout", () => map.scrollWheelZoom.disable());
@@ -89,8 +101,8 @@ function interactiveMap(frame) {
       }
     })
     .catch(() => {});
-  // This site: the larger ring, always on top.
-  L.circleMarker([lat, lon], { radius: 9, weight: 4, color: accent, fillColor: color("--stone") || "#fff", fillOpacity: 0.55, interactive: false, pane: "markerPane" }).addTo(map);
+  // This site: the larger ring, always on top (not on the overview map).
+  if (!overview) L.circleMarker([lat, lon], { radius: 9, weight: 4, color: accent, fillColor: color("--stone") || "#fff", fillOpacity: 0.55, interactive: false, pane: "markerPane" }).addTo(map);
 }
 
 function staticZoom(frame) {

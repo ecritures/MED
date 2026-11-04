@@ -19,7 +19,7 @@ const TEXT = {
   nl: {
     home: "Home", posts: "Artikelen", tags: "Trefwoorden", countriesMenu: "Landen",
     countryIntro: (c) => `Werelderfgoed in ${c} langs de Middellandse Zee.`, noArticles: "Hier komen binnenkort artikelen.",
-    latest: "Nieuwste artikelen", allPosts: (s) => `Alle artikelen op ${s}`, allTags: (s) => `Alle trefwoorden op ${s}`,
+    latest: "Erfgoed", allPosts: (s) => `Alle artikelen op ${s}`, allTags: (s) => `Alle trefwoorden op ${s}`,
     tag: (t) => `Trefwoord: ${t}`, pagesAbout: (t) => `Pagina's over ${t}`, linkedTo: "Gekoppeld aan",
     notFound: "Pagina niet gevonden", notFoundText: "Deze pagina bestaat niet.", goHome: "Naar de homepage",
     dataFrom: "Gegevens van",
@@ -35,6 +35,7 @@ const TEXT = {
     gallery: "Fotogalerij", galleryPrev: "Vorige foto's", galleryNext: "Volgende foto's", of: "van",
     galleryCredit: "Foto's via Wikimedia Commons. Klik op een foto voor de maker en de licentie.",
     distance: "Afstand tot de Middellandse Zee", onCoast: "aan de kust",
+    medMap: "Kaart van de Middellandse Zee met alle werelderfgoedlocaties", medMapCaption: "Klik op een cirkel voor de naam en het artikel.",
     readMore: "Naar het artikel", onWikidata: "Bekijk op Wikidata",
     zoomIn: "Inzoomen", zoomOut: "Uitzoomen", openOsm: "Open in OpenStreetMap", mapOf: (l) => `Kaart van de omgeving van ${l}`,
     articleNav: "Artikelnavigatie", prev: "Vorig artikel", next: "Volgend artikel", current: "Huidig artikel",
@@ -42,7 +43,7 @@ const TEXT = {
   en: {
     home: "Home", posts: "Posts", tags: "Tags", countriesMenu: "Countries",
     countryIntro: (c) => `World Heritage in ${c} along the Mediterranean.`, noArticles: "Articles will appear here soon.",
-    latest: "Latest posts", allPosts: (s) => `All posts on ${s}`, allTags: (s) => `All tags on ${s}`,
+    latest: "Heritage", allPosts: (s) => `All posts on ${s}`, allTags: (s) => `All tags on ${s}`,
     tag: (t) => `Tag: ${t}`, pagesAbout: (t) => `Pages about ${t}`, linkedTo: "Linked to",
     notFound: "Page not found", notFoundText: "This page does not exist.", goHome: "Go to the home page",
     dataFrom: "Data from",
@@ -58,6 +59,7 @@ const TEXT = {
     gallery: "Photo gallery", galleryPrev: "Previous photos", galleryNext: "Next photos", of: "of",
     galleryCredit: "Photos via Wikimedia Commons. Click a photo for its author and licence.",
     distance: "Distance to the Mediterranean", onCoast: "on the coast",
+    medMap: "Map of the Mediterranean with every World Heritage location", medMapCaption: "Click a circle for its name and article.",
     readMore: "Read the article", onWikidata: "View on Wikidata",
     zoomIn: "Zoom in", zoomOut: "Zoom out", openOsm: "Open in OpenStreetMap", mapOf: (l) => `Map of the area around ${l}`,
     articleNav: "Article navigation", prev: "Previous article", next: "Next article", current: "Current article",
@@ -179,6 +181,24 @@ ${rows ? `<dl>\n${rows}\n</dl>` : ""}
 // The frame always shows about `widthKm` kilometres (default 200) from left to right, at any screen size:
 // tile sizes are set in container-width units (cqw), so the map scales with its column.
 // The coordinates sit exactly in the centre, under the marker. No JavaScript needed.
+// Overview map of the whole Mediterranean with every World Heritage location (homepage).
+const MED_BOUNDS = [[30.2, -6.2], [46.2, 36.4]]; // south-west and north-east corners
+function overviewMap() {
+  const lat = 38.2, lon = 15.1, km = 3800;
+  const layer = mapLayer(lat, lon, km);
+  return `<figure class="h-map h-overview">
+  <div class="h-map-frame" data-lat="${lat}" data-lon="${lon}" data-km="${km}" data-overview="${esc(JSON.stringify(MED_BOUNDS))}" data-points="${href("assets/map-points.json")}" data-base="${href()}" data-text="${esc(JSON.stringify({ zoomIn: T.zoomIn, zoomOut: T.zoomOut, readMore: T.readMore, onWikidata: T.onWikidata }))}" role="img" aria-label="${esc(T.medMap)}">
+    <span class="h-map-tiles">${layer.tiles}</span>
+    <span class="h-scale" style="width:${layer.barWidth}">${layer.barLabel}</span>
+    <div class="h-zoom" hidden>
+      <button type="button" data-zoom="in" aria-label="${T.zoomIn}" title="${T.zoomIn}">+</button>
+      <button type="button" data-zoom="out" aria-label="${T.zoomOut}" title="${T.zoomOut}">−</button>
+    </div>
+  </div>
+  <figcaption>${T.medMapCaption} ${T.mapData} <a href="https://www.openstreetmap.org/copyright" rel="noopener">${T.mapContributors}</a></figcaption>
+</figure>`;
+}
+
 function locationMap({ latitude: lat, longitude: lon }, label, widthKm = 200, qid = "") {
   const layer = mapLayer(lat, lon, widthKm);
   const f = (v) => v.toFixed(5);
@@ -294,9 +314,13 @@ ${tagList(d)}
 </article>`;
 }
 
-function postCard(d) {
+// A card in a list of articles; under the title a link to the country page(s).
+function postCard(d, { showCountry = true } = {}) {
+  const countries = showCountry ? (d.heritage?.countries || []) : [];
+  const countryLinks = countries.map((c) => `<a href="${href(`landen/${slugify(c.label)}/`)}">${esc(c.label)}</a>`).join(", ");
   return `<li class="card">
   <a href="${href(d.path)}"><h3>${esc(d.title)}</h3></a>
+  ${countryLinks ? `<p class="card-country">${countryLinks}</p>` : ""}
   ${d.date ? `<time datetime="${d.date}">${fmtDate(d.date)}</time>` : ""}
   <p>${esc(d.description)}</p>
 </li>`;
@@ -316,7 +340,12 @@ const docs = await Promise.all(
 const ordered = docs
   .filter((d) => d.frontmatter?.order !== undefined && Number.isFinite(Number(d.frontmatter.order)))
   .sort((a, b) => Number(a.frontmatter.order) - Number(b.frontmatter.order));
-const posts = docs.filter((d) => d.type === "BlogPosting" || d.path.startsWith("posts/")).sort((a, b) => (b.date || "").localeCompare(a.date || ""));
+const orderOf = (d) => (Number.isFinite(Number(d.frontmatter?.order)) && d.frontmatter?.order !== null && d.frontmatter?.order !== undefined ? Number(d.frontmatter.order) : Infinity);
+const posts = docs
+  .filter((d) => d.type === "BlogPosting" || d.path.startsWith("posts/"))
+  .sort((a, b) => orderOf(a) - orderOf(b) || (b.date || "").localeCompare(a.date || ""));
+// A country page for every country in the menu and every country that has an article.
+const COUNTRY_PAGES = [...new Set([...MENU_COUNTRIES, ...docs.flatMap((d) => (d.heritage?.countries || []).map((c) => c.label))])];
 
 await fs.rm(DIST, { recursive: true, force: true });
 await fs.mkdir(DIST, { recursive: true });
@@ -330,7 +359,7 @@ for (const m of mediaList) {
 }
 
 // ---------- Content pages ----------
-const countryNotePaths = new Set(MENU_COUNTRIES.map((c) => `landen/${slugify(c)}/`));
+const countryNotePaths = new Set(COUNTRY_PAGES.map((c) => `landen/${slugify(c)}/`));
 for (const d of docs) {
   if (countryNotePaths.has(d.path)) continue; // shown on the country page below
   const isHome = d.path === "";
@@ -354,15 +383,16 @@ ${content}
 ${tagList(d)}
 </article>`;
 
+  if (isHome) body += overviewMap();
   if (isHome && posts.length) {
-    body += `<section><h2>${T.latest}</h2><ul class="cards">${posts.slice(0, 5).map(postCard).join("")}</ul></section>`;
+    body += `<section><h2>${T.latest}</h2><ul class="cards">${posts.map((p) => postCard(p)).join("")}</ul></section>`;
   }
-  await write(d.path, layout({ title: d.title, description: d.description, url: d.url, jsonld: d.jsonld, body }));
+  await write(d.path, layout({ title: d.title, description: d.description, url: d.url, jsonld: d.jsonld, body, map: isHome }));
 }
 
 // ---------- Country pages (menu "Landen") ----------
 // Articles are placed by their country on Wikidata (P17), in `order`.
-for (const country of MENU_COUNTRIES) {
+for (const country of COUNTRY_PAGES) {
   const list = docs
     .filter((d) => d.heritage?.countries?.some((c) => c.label === country))
     .sort((a, b) => (Number(a.frontmatter?.order) || 1e9) - (Number(b.frontmatter?.order) || 1e9));
@@ -378,7 +408,7 @@ for (const country of MENU_COUNTRIES) {
     jsonld: { "@context": "https://schema.org", "@type": "CollectionPage", "@id": url, url, name: country,
       isPartOf: { "@id": baseUrl + "#website" }, hasPart: list.map((d) => ({ "@id": d.url + "#main" })) },
     body: `<div class="prose"><h1>${esc(title)}</h1>${noteHtml || `<p class="lede">${esc(T.countryIntro(country))}</p>`}</div>` +
-      (list.length ? `<ul class="cards">${list.map(postCard).join("")}</ul>` : `<p class="meta">${T.noArticles}</p>`),
+      (list.length ? `<ul class="cards">${list.map((p) => postCard(p, { showCountry: false })).join("")}</ul>` : `<p class="meta">${T.noArticles}</p>`),
   }));
 }
 
@@ -398,7 +428,7 @@ if (!docs.some((d) => d.path === "posts/")) {
       isPartOf: { "@id": baseUrl + "#website" },
       hasPart: posts.map((p) => ({ "@id": p.url + "#main" })),
     },
-    body: `<h1>${T.posts}</h1><ul class="cards">${posts.map(postCard).join("")}</ul>`,
+    body: `<h1>${T.posts}</h1><ul class="cards">${posts.map((p) => postCard(p)).join("")}</ul>`,
   }));
 }
 
@@ -427,7 +457,7 @@ for (const t of tags.values()) {
     },
     body: `<h1>${esc(t.name)}</h1>
 ${t.wikidata ? `<p class="meta">${T.linkedTo} <a href="${esc(t.wikidata)}" rel="noopener">Wikidata ${esc(t.wikidata.split("/").pop())}</a></p>` : ""}
-<ul class="cards">${t.docs.map(postCard).join("")}</ul>`,
+<ul class="cards">${t.docs.map((p) => postCard(p)).join("")}</ul>`,
   }));
 }
 await write("tags", layout({

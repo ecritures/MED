@@ -311,3 +311,11 @@ article::after { content: ""; display: block; clear: both; }
 .nav-menu li a { display: block; padding: .5rem 1rem; color: #fff; text-decoration: none; }
 .nav-menu li a:hover, .nav-menu li a:focus-visible { background: #7f2e22; color: #fff; outline: none; }
 .lede { font-size: 1.15rem; color: var(--muted); font-style: italic; }
+
+/* ---------- Overview map on the homepage: for now on phones only ---------- */
+.h-overview { margin: 2.2rem 0 .5rem; }
+.h-overview .h-map-frame { aspect-ratio: 4 / 3; }
+@media (min-width: 701px) { .h-overview { display: none; } }
+.card .card-country { margin: .1rem 0 .3rem; font-size: .95rem; }
+.card .card-country a { color: var(--accent); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: .2em; }
+.card .card-country a:hover { text-decoration-thickness: 2px; }
