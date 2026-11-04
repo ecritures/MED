@@ -25,7 +25,7 @@ const TEXT = {
     dataFrom: "Gegevens van",
     region: "UNESCO-regio", country: "Land", countries: "Landen", inscribed: "Ingeschreven",
     notOnWikidata: "Niet op Wikidata", regionUnknown: "Onbekend voor dit land",
-    partOf: "Onderdeel van het werelderfgoed", viewUnesco: "Bekijk op de Werelderfgoedlijst van UNESCO",
+    partOf: "Onderdeel van het werelderfgoed", visitSite: "Bekijk de erfgoedlocatie", viewUnesco: "Bekijk op de Werelderfgoedlijst van UNESCO",
     photo: (a) => `Foto: ${a}`, articleText: "Artikeltekst", imageAndLocation: "Afbeelding en locatie",
     listing: "Werelderfgoed", openMap: (l) => `Open de locatie van ${l} op OpenStreetMap`,
     mapData: "Kaartgegevens ©", mapContributors: "OpenStreetMap-bijdragers",
@@ -51,7 +51,7 @@ const TEXT = {
     dataFrom: "Data from",
     region: "UNESCO region", country: "Country", countries: "Countries", inscribed: "Inscribed",
     notOnWikidata: "Not on Wikidata", regionUnknown: "Not known for this country",
-    partOf: "Part of the World Heritage site", viewUnesco: "View on the UNESCO World Heritage List",
+    partOf: "Part of the World Heritage site", visitSite: "Visit the heritage site", viewUnesco: "View on the UNESCO World Heritage List",
     photo: (a) => `Photo by ${a}`, articleText: "Article text", imageAndLocation: "Image and location",
     listing: "World Heritage listing", openMap: (l) => `Open the location of ${l} on OpenStreetMap`,
     mapData: "Map data ©", mapContributors: "OpenStreetMap contributors",
@@ -269,7 +269,18 @@ function distanceHtml(value) {
   return `<div><dt>${T.distance}</dt><dd class="h-year h-distance">${shown}</dd></div>`;
 }
 
+// Links to the site itself (opening hours, tickets…), from `links` in the note, at most three.
+// Each item: "[Openingstijden](https://…) (es)" — link text, address, language code.
+function siteLinks(list) {
+  const items = Array.isArray(list) ? list : list ? [list] : [];
+  return items.map((item) => {
+    const m = String(item).match(/^\s*\[([^\]]+)\]\(\s*(https?:\/\/[^\s)]+)\s*\)\s*(?:\(\s*([a-zA-Z]{2,3}(?:-[a-zA-Z]{2})?)\s*\))?\s*$/);
+    return m ? { text: m[1].trim(), url: m[2], lang: m[3]?.toLowerCase() || "" } : null;
+  }).filter(Boolean).slice(0, 3);
+}
+
 function heritageArticle(d, contentHtml, seq = []) {
+  const links = siteLinks(d.frontmatter?.links);
   // Subtitle: `subtitle` in the note; otherwise the Wikidata description in the site language;
   // otherwise "World Heritage in <country>".
   const countryNames = d.heritage.countries.map((c) => c.label);
@@ -309,7 +320,7 @@ ${contentHtml}
   </div>
   ${figures ? `<aside class="h-images" aria-label="${T.imageAndLocation}">\n${figures}\n</aside>` : ""}
 </div>
-<section class="h-facts${h.listedAs ? "" : " no-bottom"}" aria-label="${T.listing}">
+<section class="h-facts${h.listedAs || links.length ? "" : " no-bottom"}" aria-label="${T.listing}">
   <div class="h-facts-top">
   <dl class="h-meta">
     <div><dt>${T.region}</dt><dd>${regions}</dd></div>
@@ -318,8 +329,12 @@ ${contentHtml}
     ${distanceHtml(d.frontmatter?.distance)}
   </dl>
   </div>
-  ${h.listedAs ? `<div class="h-facts-bottom">
-    <p class="h-part">${T.partOf} <a href="${esc(h.listedAs.url)}" rel="noopener">${esc(h.listedAs.label)}</a></p>
+  ${h.listedAs || links.length ? `<div class="h-facts-bottom">
+    ${h.listedAs ? `<p class="h-part">${T.partOf} <a href="${esc(h.listedAs.url)}" rel="noopener">${esc(h.listedAs.label)}</a></p>` : ""}
+    ${links.length ? `<div class="h-visit">
+      <h2>${T.visitSite}</h2>
+      <ul>${links.map((l) => `<li><a href="${esc(l.url)}" rel="noopener"${l.lang ? ` hreflang="${esc(l.lang)}"` : ""}>${esc(l.text)}</a>${l.lang ? ` <span class="h-lang">(${esc(l.lang)})</span>` : ""}</li>`).join("")}</ul>
+    </div>` : ""}
   </div>` : ""}
 </section>
 ${tagList(d)}
