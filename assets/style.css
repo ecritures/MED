@@ -310,7 +310,7 @@ article::after { content: ""; display: block; clear: both; }
   background: var(--accent); border-radius: 2px; box-shadow: 0 6px 18px rgb(0 0 0 / .18);
 }
 .nav-menu li a { display: block; padding: .5rem 1rem; color: #fff; text-decoration: none; }
-.nav-menu li a:hover, .nav-menu li a:focus-visible { background: #7f2e22; color: #fff; outline: none; }
+.nav-menu li a:hover, .nav-menu li a:focus-visible { background: #7f2e22; color: #fff; outline: none; text-decoration: none; }
 .lede { font-size: 1.15rem; color: var(--muted); font-style: italic; }
 
 /* ---------- Overview map on the homepage: for now on phones only ---------- */

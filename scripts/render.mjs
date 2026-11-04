@@ -97,6 +97,10 @@ const md = new Marked({
   },
 });
 
+
+// Three white-crested waves after the site name (same drawing as golven.svg), in the text colour.
+const LOGO_WAVES = `<svg class="logo-waves" viewBox="14 206 484 116" aria-hidden="true"><defs><path id="logo-golf" d="M24 152 L24 150 C50 146 64 122 76 85 C90 45 112 14 142 14 C160 14 170 30 172 56 C158 38 136 38 126 60 C114 86 118 126 142 150 L146 152 Z"/></defs><use href="#logo-golf" transform="translate(-10 199) scale(1.25 0.7)"/><use href="#logo-golf" transform="translate(135 199) scale(1.25 0.7)"/><use href="#logo-golf" transform="translate(280 199) scale(1.25 0.7)"/><rect x="0" y="302" width="512" height="18"/></svg>`;
+
 function layout({ title, description, url, jsonld, body, map = false }) {
   return `<!doctype html>
 <html lang="${esc(config.language)}">
@@ -122,7 +126,7 @@ ${jsonld ? `<script type="application/ld+json">\n${JSON.stringify(jsonld, null, 
 </head>
 <body>
 <header class="site-header">
-  <a class="site-title" href="${href()}">${esc(config.title)}</a>
+  <a class="site-title" href="${href()}">${esc(config.title)}${LOGO_WAVES}</a>
   <nav>
     <a href="${href("posts/")}">${T.posts}</a>
     ${MENU_COUNTRIES.length ? `<details class="nav-menu">
@@ -280,8 +284,9 @@ function heritageArticle(d, contentHtml, seq = []) {
   <figcaption>${credit ? `${credit}. ` : ""}<a href="${esc(img.page)}" rel="noopener">Wikimedia Commons</a></figcaption>
 </figure>`;
     })
-    .join("\n") + (h.coordinates ? "\n" + locationMap(h.coordinates, h.label, Number(d.frontmatter?.map_km) || config.mapWidthKm || 200, h.id) : "")
-    + galleryHtml(d.gallery, h.label);
+    .join("\n")
+    + galleryHtml(d.gallery, h.label) // the gallery right under the large photo
+    + (h.coordinates ? "\n" + locationMap(h.coordinates, h.label, Number(d.frontmatter?.map_km) || config.mapWidthKm || 200, h.id) : "");
   return `<article class="heritage">
 <header class="h-head">
   <h1>${esc(d.title)}</h1>
