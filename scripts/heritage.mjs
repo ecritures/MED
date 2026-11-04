@@ -132,7 +132,15 @@ export async function getHeritage(qid, lang = "en", imageOverride = null) {
   const claims = listing.claims;
 
   const itemIds = (pid) => itemIdsOf(claims, pid);
-  const countryIds = itemIdsOf(own, "P17").length ? itemIdsOf(own, "P17") : itemIds("P17");
+  let countryIds = itemIdsOf(own, "P17").length ? itemIdsOf(own, "P17") : itemIds("P17");
+  // A site in a territory with its own ISO country code (P297) on Wikidata, such as
+  // Gibraltar (GI), counts under that territory rather than under the sovereign state.
+  const placeIds = itemIdsOf(own, "P131").length ? itemIdsOf(own, "P131") : itemIds("P131");
+  if (placeIds.length) {
+    const places = await getEntities(placeIds, lang, "labels|claims");
+    const territories = placeIds.filter((id) => bestStatements(places[id]?.claims?.P297).length && !countryIds.includes(id));
+    if (territories.length) countryIds = territories;
+  }
   const criteriaIds = itemIds("P2614");
 
   // Year of inscription: start time on the "World Heritage Site" designation.

@@ -330,7 +330,9 @@ for (const m of mediaList) {
 }
 
 // ---------- Content pages ----------
+const countryNotePaths = new Set(MENU_COUNTRIES.map((c) => `landen/${slugify(c)}/`));
 for (const d of docs) {
+  if (countryNotePaths.has(d.path)) continue; // shown on the country page below
   const isHome = d.path === "";
   const meta = [
     d.date && `<time datetime="${d.date}">${fmtDate(d.date)}</time>`,
@@ -365,13 +367,17 @@ for (const country of MENU_COUNTRIES) {
     .filter((d) => d.heritage?.countries?.some((c) => c.label === country))
     .sort((a, b) => (Number(a.frontmatter?.order) || 1e9) - (Number(b.frontmatter?.order) || 1e9));
   const url = baseUrl + `landen/${slugify(country)}/`;
+  // Your own text from content/landen/<Land>.md, shown above the list.
+  const note = docs.find((d) => d.path === `landen/${slugify(country)}/`);
+  const noteHtml = note?.markdown?.trim() ? md.parse(note.markdown).replace(/<h1[^>]*>[\s\S]*?<\/h1>\n?/, "") : "";
+  const title = note?.frontmatter?.title || country;
   await write(`landen/${slugify(country)}`, layout({
-    title: country,
-    description: T.countryIntro(country),
+    title,
+    description: note?.frontmatter?.description || T.countryIntro(country),
     url,
     jsonld: { "@context": "https://schema.org", "@type": "CollectionPage", "@id": url, url, name: country,
       isPartOf: { "@id": baseUrl + "#website" }, hasPart: list.map((d) => ({ "@id": d.url + "#main" })) },
-    body: `<div class="prose"><h1>${esc(country)}</h1><p class="lede">${esc(T.countryIntro(country))}</p></div>` +
+    body: `<div class="prose"><h1>${esc(title)}</h1>${noteHtml || `<p class="lede">${esc(T.countryIntro(country))}</p>`}</div>` +
       (list.length ? `<ul class="cards">${list.map(postCard).join("")}</ul>` : `<p class="meta">${T.noArticles}</p>`),
   }));
 }

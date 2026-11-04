@@ -8,7 +8,7 @@
   },
   "baseUrl": "https://ecritures.github.io/MED",
   "mapWidthKm": 200,
-  "menuCountries": ["Spanje", "Frankrijk", "Italië", "Griekenland"],
+  "menuCountries": ["Gibraltar", "Spanje", "Frankrijk", "Italië", "Griekenland"],
   "linking": {
     "wikidata": true,
     "wikidataLanguage": "nl"
