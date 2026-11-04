@@ -115,7 +115,7 @@ ${jsonld ? `<script type="application/ld+json">\n${JSON.stringify(jsonld, null, 
 <body>
 <header class="site-header">
   <a class="site-title" href="${href()}">${esc(config.title)}</a>
-  <nav><a href="${href()}">${T.home}</a><a href="${href("posts/")}">${T.posts}</a><a href="${href("tags/")}">${T.tags}</a></nav>
+  <nav><a href="${href("posts/")}">${T.posts}</a></nav>
 </header>
 <main>
 ${body}
