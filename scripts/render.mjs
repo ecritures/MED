@@ -332,7 +332,7 @@ function heritageArticle(d, contentHtml, seq = []) {
       <div class="h-text-area">
         <div class="h-text-scroll prose" tabindex="0" aria-label="${T.articleText}">
 ${contentHtml}
-${textLinks.length ? `<div class="h-visit h-text-links"><h2>${T.readMoreLinks}</h2>${linkList(textLinks)}</div>` : ""}
+${textLinks.length ? `<div class="h-visit h-text-links"><h2>${T.readMoreLinks}</h2>${linkList(textLinks, "h-star")}</div>` : ""}
         </div>
       </div>
       ${h.unescoUrl || origin ? `<div class="h-text-foot">${h.unescoUrl ? `<a class="h-unesco" href="${esc(h.unescoUrl)}" rel="noopener"><svg class="h-chevron" viewBox="0 0 12 16" width="10" height="14" aria-hidden="true"><path d="M2 1.5 9.5 8 2 14.5"/></svg>${T.viewUnesco}</a>` : ""}${origin}</div>` : ""}
