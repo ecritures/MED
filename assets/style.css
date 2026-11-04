@@ -72,7 +72,7 @@ main { padding: 3rem 0 4rem; }
 .h-text { display: flex; flex-direction: column; min-height: 18rem; background: var(--panel); border-radius: 2px; box-shadow: inset 0 0 0 1px var(--rule); }
 .h-text-area { position: relative; flex: 1; min-height: 0; }
 /* The UNESCO link at the very bottom of the text box, always in view. */
-.h-text-foot { flex: none; padding: 1rem clamp(1.4rem, 3vw, 2.4rem) clamp(1.2rem, 2.6vw, 2rem); border-top: 1px solid var(--rule); }
+.h-text-foot { flex: none; padding: 1rem clamp(1.4rem, 3vw, 2.4rem) clamp(1.2rem, 2.6vw, 2rem); }
 .h-text-scroll {
   position: absolute; inset: 0; overflow-y: auto; max-width: none;
   padding: clamp(1.4rem, 3vw, 2.4rem);
@@ -399,6 +399,7 @@ article::after { content: ""; display: block; clear: both; }
 /* Site links in the facts band start with an asterisk. */
 .h-visit ul.h-star li::before { content: "* "; color: var(--muted); }
 /* Small line at the very bottom of the text box: where the text comes from. */
-.h-text-origin { margin: .9rem 0 0; font-size: .8rem; line-height: 1.45; color: var(--muted); }
+.h-text-origin { margin: 1rem 0 0; padding-top: .9rem; border-top: 1px solid var(--rule); font-size: .8rem; line-height: 1.45; color: var(--muted); }
+.h-text-foot > .h-text-origin:first-child { margin-top: 0; padding-top: 0; border-top: 0; }
 .h-text-origin a { color: var(--accent); }
 .h-text-origin a:hover { color: #7f2e22; }
