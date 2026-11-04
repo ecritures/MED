@@ -337,3 +337,11 @@ article::after { content: ""; display: block; clear: both; }
   aspect-ratio: 1; overflow: hidden; border-radius: 2px; background: var(--stone-deep);
 }
 .card-home .card-img img { width: 100%; height: 100%; object-fit: cover; }
+
+/* Row of white waves under each article on the homepage (assets/golven-rij.svg repeats sideways). */
+.card-home { border-top: 0; padding-bottom: 0; }
+.card-home .card-waves {
+  clear: both; height: 2.1rem; margin-top: 1rem;
+  background: var(--stone) url("golven-rij.svg") repeat-x left bottom .35rem / auto 1.45rem;
+  border-radius: 2px;
+}

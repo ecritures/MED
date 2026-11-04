@@ -329,6 +329,7 @@ function homeCard(d) {
   ${img ? `<a class="card-img" href="${href(d.path)}" tabindex="-1" aria-hidden="true"><img src="${esc(img.src)}" alt="" loading="lazy"></a>` : ""}
   <p class="card-text">${esc(d.firstParagraph || d.description)}</p>
   <a class="card-more" href="${href(d.path)}" aria-label="${esc(T.readMoreAbout(d.title))}">${T.readOn} ${chev}</a>
+  <div class="card-waves" aria-hidden="true"></div>
 </li>`;
 }
 
