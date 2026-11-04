@@ -314,7 +314,7 @@ function heritageArticle(d, contentHtml, seq = []) {
     .map((img, i) => {
       const credit = [img.author && T.photo(esc(img.author)), img.license && esc(img.license)].filter(Boolean).join(", ");
       return `<figure>
-  <a href="${esc(img.page)}" rel="noopener"><img src="${esc(img.src)}" alt="${esc(img.caption || h.label)}"${i ? ' loading="lazy"' : ""}></a>
+  <a href="${esc(img.page)}" rel="noopener" data-full="${esc(img.large || img.src)}" data-credit="${esc([img.author ? T.photo(img.author) : T.photoUnknown, img.license].filter(Boolean).join(", "))}"><img src="${esc(img.src)}" alt="${esc(img.caption || h.label)}"${i ? ' loading="lazy"' : ""}></a>
   <figcaption>${credit ? `${credit}. ` : ""}<a href="${esc(img.page)}" rel="noopener">Wikimedia Commons</a></figcaption>
 </figure>`;
     })
@@ -339,7 +339,7 @@ ${textLinks.length ? `<div class="h-visit h-text-links"><h2>${T.readMoreLinks}</
     </div>
     ${articleNav(d, seq)}
   </div>
-  ${figures ? `<aside class="h-images" aria-label="${T.imageAndLocation}">\n${figures}\n</aside>` : ""}
+  ${figures ? `<aside class="h-images" aria-label="${T.imageAndLocation}" data-commons="${esc(T.viewOnCommons)}" data-close="${esc(T.closePhoto)}">\n${figures}\n</aside>` : ""}
 </div>
 <section class="h-facts${h.listedAs || links.length ? "" : " no-bottom"}" aria-label="${T.listing}">
   <div class="h-facts-top">

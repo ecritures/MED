@@ -182,6 +182,7 @@ export async function getHeritage(qid, lang = "en", imageOverride = null) {
   const images = files.map((file) => ({
     file,
     src: info[file]?.thumb || commonsUrl(file, 900),
+    large: commonsUrl(file, 1600), // for the photo opened large on the page
     page: info[file]?.page || `https://commons.wikimedia.org/wiki/File:${encodeURIComponent(file.replace(/ /g, "_"))}`,
     author: info[file]?.author || "",
     license: info[file]?.license || "",
