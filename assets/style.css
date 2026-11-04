@@ -398,7 +398,7 @@ article::after { content: ""; display: block; clear: both; }
 .h-text-scroll .h-text-links ul { margin: 0; padding: 0; }
 
 /* Site links in the facts band start with an asterisk. */
-.h-visit ul.h-star li::before { content: "* "; color: var(--muted); }
+.h-visit ul.h-star li::before { content: "– "; color: var(--ink); }
 /* Small line at the very bottom of the text box: where the text comes from. */
 .h-text-origin { margin: 1rem 0 0; padding-top: .9rem; border-top: 1px solid var(--rule); font-size: .8rem; line-height: 1.45; color: var(--muted); }
 .h-text-foot > .h-text-origin:first-child { margin-top: 0; padding-top: 0; border-top: 0; }
