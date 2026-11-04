@@ -72,7 +72,8 @@ main { padding: 3rem 0 4rem; }
 .h-text { display: flex; flex-direction: column; min-height: 18rem; background: var(--panel); border-radius: 2px; box-shadow: inset 0 0 0 1px var(--rule); }
 .h-text-area { position: relative; flex: 1; min-height: 0; }
 /* The UNESCO link at the very bottom of the text box, always in view. */
-.h-text-foot { flex: none; padding: 1rem clamp(1.4rem, 3vw, 2.4rem) clamp(1.2rem, 2.6vw, 2rem); }
+.h-text-foot { flex: none; display: flex; flex-direction: column; padding: 1rem clamp(1.4rem, 3vw, 2.4rem) clamp(1.2rem, 2.6vw, 2rem); }
+.h-text-foot > .h-unesco { align-self: flex-end; } /* button on the right */
 .h-text-scroll {
   position: absolute; inset: 0; overflow-y: auto; max-width: none;
   padding: clamp(1.4rem, 3vw, 2.4rem);
