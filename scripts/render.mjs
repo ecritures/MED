@@ -72,7 +72,9 @@ const TEXT = {
   },
 };
 const T = TEXT[config.language] || TEXT.en;
-const MENU_COUNTRIES = config.menuCountries || [];
+// Countries in the "Landen" menu: every country that has an article, in the order of the list
+// (along the coast, by `order`). Set menuCountries in site.config.json to choose them by hand instead.
+let MENU_COUNTRIES = config.menuCountries || [];
 const num = (v, digits) => v.toLocaleString(config.language, { minimumFractionDigits: digits, maximumFractionDigits: digits });
 
 const esc = (s = "") =>
@@ -439,6 +441,17 @@ const posts = docs
   .filter((d) => d.type === "BlogPosting" || d.path.startsWith("posts/"))
   .sort((a, b) => orderOf(a) - orderOf(b) || (b.date || "").localeCompare(a.date || ""));
 // A country page for every country in the menu and every country that has an article.
+if (config.menuFromArticles !== false) {
+  const firstOrder = new Map();
+  for (const d of docs) {
+    const o = Number(d.frontmatter?.order);
+    for (const c of d.heritage?.countries || []) {
+      const prev = firstOrder.get(c.label);
+      firstOrder.set(c.label, Number.isFinite(o) ? Math.min(o, prev ?? Infinity) : prev ?? Infinity);
+    }
+  }
+  if (firstOrder.size) MENU_COUNTRIES = [...firstOrder].sort((a, b) => a[1] - b[1] || a[0].localeCompare(b[0], "nl")).map(([c]) => c);
+}
 const COUNTRY_PAGES = [...new Set([...MENU_COUNTRIES, ...docs.flatMap((d) => (d.heritage?.countries || []).map((c) => c.label))])];
 
 await fs.rm(DIST, { recursive: true, force: true });

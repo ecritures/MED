@@ -109,7 +109,6 @@ main { padding: 3rem 0 4rem; }
   .h-nav { grid-template-columns: 1fr 1fr; }
   .h-nav-current { grid-column: 1 / -1; grid-row: 1; }
 }
-.h-text-scroll > p:first-child::first-line { font-variant-caps: small-caps; letter-spacing: .03em; }
 
 .h-images { position: sticky; top: 1.5rem; display: grid; gap: 1.6rem; }
 .h-images figure { margin: 0; }
@@ -426,3 +425,6 @@ article::after { content: ""; display: block; clear: both; }
 .h-nav .h-nav-up:hover, .h-nav .h-nav-up:focus-visible { background: #7f2e22; }
 .h-nav .h-nav-up:hover span { text-decoration: none; }
 .h-nav .h-nav-up .h-nav-chev { stroke: currentColor; margin-top: 0; }
+
+/* A long country list scrolls inside the menu. */
+.nav-menu ul { max-height: min(70vh, 32rem); overflow-y: auto; }
