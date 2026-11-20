@@ -143,7 +143,10 @@ export async function getHeritage(qid, lang = "en", imageOverride = null) {
     const places = await getEntities(placeIds, lang, "labels|claims");
     const territories = placeIds.filter((id) => bestStatements(places[id]?.claims?.P297).length && !countryIds.includes(id));
     if (territories.length) countryIds = territories;
+    // No country on the item itself: take the country of the place it lies in (P131 → P17).
+    if (!countryIds.length) countryIds = placeIds.flatMap((id) => itemIdsOf(places[id]?.claims || {}, "P17"));
   }
+  countryIds = [...new Set(countryIds)];
   const criteriaIds = itemIds("P2614");
 
   // Year of inscription: start time on the "World Heritage Site" designation.
@@ -154,6 +157,10 @@ export async function getHeritage(qid, lang = "en", imageOverride = null) {
     .sort((a, b) => a - b);
 
   const linked = await getEntities([...countryIds, ...criteriaIds], lang, "labels|claims");
+  // Items such as Troy or Acre also list historical states (Roman Empire, Ottoman Empire) as country.
+  // Only present-day countries have an ISO code (P297); keep those when there are any.
+  const current = countryIds.filter((id) => bestStatements(linked[id]?.claims?.P297).length);
+  if (current.length) countryIds = current;
   const countries = countryIds.map((id) => {
     const iso = bestStatements(linked[id]?.claims?.P297)[0]?.mainsnak.datavalue?.value || null;
     const flagFile = bestStatements(linked[id]?.claims?.P41)[0]?.mainsnak.datavalue?.value || null;
@@ -198,7 +205,8 @@ export async function getHeritage(qid, lang = "en", imageOverride = null) {
     description: entity.descriptions?.[lang]?.value || "",
     whsId: String(whsId),
     listedAs: listing.id !== qid ? { id: listing.id, label: listing.label || listing.id, url: `https://www.wikidata.org/wiki/${listing.id}` } : null,
-    unescoUrl: `https://whc.unesco.org/en/list/${encodeURIComponent(String(whsId).replace(/-.*$/, ""))}`,
+    // "417rev", "320bis", "1435-001" → the UNESCO page number (417, 320, 1435)
+    unescoUrl: `https://whc.unesco.org/en/list/${encodeURIComponent(String(whsId).match(/^\d+/)?.[0] || String(whsId))}`,
     year: years[0] ?? null,
     countries,
     regions: [...new Set(countries.map((c) => c.region).filter(Boolean))],
