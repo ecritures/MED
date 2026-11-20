@@ -447,3 +447,8 @@ article::after { content: ""; display: block; clear: both; }
   .card .card-status-head { display: inline-flex; }
   .card .card-country .card-status { display: none; }
 }
+
+/* Phones: the longer site name (MEDheritage) and the Landen menu fit on one line. */
+@media (max-width: 480px) {
+  .site-title { font-size: 1.2rem; letter-spacing: .06em; gap: .35rem; }
+}
