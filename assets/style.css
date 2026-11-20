@@ -439,8 +439,11 @@ article::after { content: ""; display: block; clear: both; }
 }
 .card .card-status time { color: inherit; font-size: inherit; }
 /* On tablets and computers the "Nieuw!" label and date sit at the right edge of the article block. */
+/* The date: on phones beside the country label; on tablets and computers at the far right, level with the title. */
+.card-head { display: flex; align-items: baseline; gap: 1rem; }
+.card-head .card-title { flex: 1; min-width: 0; }
+.card .card-status-head { display: none; flex: none; }
 @media (min-width: 601px) {
-  .card .card-status { margin-left: auto; }
-  /* …at the right edge of the text column, not above the photo (photo = 33% + 1rem gap). */
-  .card-home:not(.no-img) .card-country { width: calc(67% - 1rem); }
+  .card .card-status-head { display: inline-flex; }
+  .card .card-country .card-status { display: none; }
 }

@@ -393,7 +393,10 @@ function homeCard(d) {
   const img = d.heritage?.images?.[0];
   const chev = `<svg viewBox="0 0 20 16" width="14" height="11" aria-hidden="true"><path d="M3 1.5 9.5 8 3 14.5M10 1.5 16.5 8 10 14.5"/></svg>`;
   return `<li class="card card-home${img ? "" : " no-img"}">
-  <a class="card-title" href="${href(d.path)}"><h3>${esc(d.title)}${isNewArticle(d) ? ` <span class="card-new">${T.statusNew}</span>` : ""}</h3></a>
+  <div class="card-head">
+    <a class="card-title" href="${href(d.path)}"><h3>${esc(d.title)}${isNewArticle(d) ? ` <span class="card-new">${T.statusNew}</span>` : ""}</h3></a>
+    ${statusLabel(d).replace('class="card-status"', 'class="card-status card-status-head"')}
+  </div>
   ${countryLinks || statusLabel(d) ? `<p class="card-country">${countryLinks}${statusLabel(d)}</p>` : ""}
   ${img ? `<a class="card-img" href="${href(d.path)}" tabindex="-1" aria-hidden="true"><img src="${esc(img.src)}" alt="" loading="lazy"></a>` : ""}
   <p class="card-text">${esc(d.firstParagraph || d.description)}</p>
