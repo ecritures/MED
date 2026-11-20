@@ -428,3 +428,19 @@ article::after { content: ""; display: block; clear: both; }
 
 /* A long country list scrolls inside the menu. */
 .nav-menu ul { max-height: min(70vh, 32rem); overflow-y: auto; }
+
+/* "Nieuw!" / "Bijgewerkt" (framed, red) with the date in red after it, beside the country label (not a link). */
+.card .card-status { display: inline-flex; align-items: center; gap: .45rem; font-size: .85rem; line-height: 1.3; color: var(--accent); }
+/* "Nieuw!" behind the title: framed, red, in the text font. */
+.card .card-new {
+  display: inline-block; vertical-align: .25em; margin-left: .35rem; padding: .1rem .5rem;
+  border: 1px solid var(--accent); border-radius: 2px; color: var(--accent);
+  font: 400 .85rem/1.3 var(--text); letter-spacing: 0; white-space: nowrap;
+}
+.card .card-status time { color: inherit; font-size: inherit; }
+/* On tablets and computers the "Nieuw!" label and date sit at the right edge of the article block. */
+@media (min-width: 601px) {
+  .card .card-status { margin-left: auto; }
+  /* …at the right edge of the text column, not above the photo (photo = 33% + 1rem gap). */
+  .card-home:not(.no-img) .card-country { width: calc(67% - 1rem); }
+}

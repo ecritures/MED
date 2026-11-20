@@ -37,6 +37,7 @@ const TEXT = {
     galleryCredit: "Klik op een foto voor de naam van de maker.",
     viewOnCommons: "Bekijk de afbeelding op Wikimedia Commons", closePhoto: "Sluiten", photoUnknown: "Maker onbekend",
     distance: "Afstand tot de Middellandse Zee", onCoast: "aan de kust",
+    statusNew: "Nieuw!", statusUpdated: "Bijgewerkt",
     readOn: "Lees verder", readMoreAbout: (t) => `Lees verder over ${t}`,
     medMap: "Kaart van de Middellandse Zee met alle werelderfgoedlocaties", medMapCaption: "Klik op een cirkel voor de naam en het artikel.",
     readMore: "Naar het artikel", onWikidata: "Bekijk op Wikidata",
@@ -64,6 +65,7 @@ const TEXT = {
     galleryCredit: "Click a photo for the name of its author.",
     viewOnCommons: "View the image on Wikimedia Commons", closePhoto: "Close", photoUnknown: "Author unknown",
     distance: "Distance to the Mediterranean", onCoast: "on the coast",
+    statusNew: "New!", statusUpdated: "Updated",
     readOn: "Read more", readMoreAbout: (t) => `Read more about ${t}`,
     medMap: "Map of the Mediterranean with every World Heritage location", medMapCaption: "Click a circle for its name and article.",
     readMore: "Read the article", onWikidata: "View on Wikidata",
@@ -373,13 +375,26 @@ ${tagList(d)}
 // A card in a list of articles; under the title a link to the country page(s).
 // Homepage card: title, country, the whole first paragraph, "Lees verder »",
 // and a square crop of the article's photo beside the text.
+// "Nieuw!" behind the title when the last edit came within a day of the first publication;
+// the date of the last edit beside the country label.
+const isNewArticle = (d) => {
+  const edited = Date.parse(d.edited), created = Date.parse(d.created);
+  return !!edited && (!created || edited - created < 24 * 3600 * 1000);
+};
+function statusLabel(d) {
+  const edited = Date.parse(d.edited);
+  if (!edited) return "";
+  const day = new Date(edited).toLocaleDateString(config.language, { day: "numeric", month: "short", year: "numeric", timeZone: "Europe/Amsterdam" });
+  return `<span class="card-status"><time datetime="${esc(d.edited)}">${esc(day)}</time></span>`;
+}
+
 function homeCard(d) {
   const countryLinks = (d.heritage?.countries || []).map((c) => `<a href="${href(`landen/${slugify(c.label)}/`)}">${esc(c.label)}</a>`).join("");
   const img = d.heritage?.images?.[0];
   const chev = `<svg viewBox="0 0 20 16" width="14" height="11" aria-hidden="true"><path d="M3 1.5 9.5 8 3 14.5M10 1.5 16.5 8 10 14.5"/></svg>`;
   return `<li class="card card-home${img ? "" : " no-img"}">
-  <a class="card-title" href="${href(d.path)}"><h3>${esc(d.title)}</h3></a>
-  ${countryLinks ? `<p class="card-country">${countryLinks}</p>` : ""}
+  <a class="card-title" href="${href(d.path)}"><h3>${esc(d.title)}${isNewArticle(d) ? ` <span class="card-new">${T.statusNew}</span>` : ""}</h3></a>
+  ${countryLinks || statusLabel(d) ? `<p class="card-country">${countryLinks}${statusLabel(d)}</p>` : ""}
   ${img ? `<a class="card-img" href="${href(d.path)}" tabindex="-1" aria-hidden="true"><img src="${esc(img.src)}" alt="" loading="lazy"></a>` : ""}
   <p class="card-text">${esc(d.firstParagraph || d.description)}</p>
   <a class="card-more" href="${href(d.path)}" aria-label="${esc(T.readMoreAbout(d.title))}">${T.readOn} ${chev}</a>
@@ -492,8 +507,8 @@ ${tagList(d)}
 
   if (isHome) body += overviewMap();
   if (isHome && posts.length) {
-    // The five most recently edited articles, newest first.
-    const recent = [...posts].sort((a, b) => (b.edited || "").localeCompare(a.edited || "") || orderOf(a) - orderOf(b)).slice(0, 5);
+    // The ten most recently published or edited articles, newest first (homeCount in site.config.json).
+    const recent = [...posts].sort((a, b) => (Date.parse(b.edited) || 0) - (Date.parse(a.edited) || 0) || orderOf(a) - orderOf(b)).slice(0, Number(config.homeCount) || 10);
     body += `<section><h2>${T.latest}</h2><ul class="cards">${recent.map(homeCard).join("")}</ul></section>`;
   }
   await write(d.path, layout({ title: d.title, description: d.description, url: d.url, jsonld: d.jsonld, body, map: isHome }));
