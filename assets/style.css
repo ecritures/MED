@@ -505,3 +505,11 @@ article::after { content: ""; display: block; clear: both; }
   .home-countries ul { columns: 2; column-gap: 0; }
   .home-countries li { break-inside: avoid; }
 }
+
+/* Regions (Sicilië, Sardinië…) as sub-items under their country, in the menu and on the homepage. */
+.nav-menu li.sub a, .home-countries li.sub a { padding-left: 2rem; font-size: .92em; position: relative; }
+.nav-menu li.sub a::before, .home-countries li.sub a::before { content: "–"; position: absolute; left: 1rem; }
+.card-country a + a { margin-left: .35rem; }
+.region-group h2 a { color: inherit; text-decoration: none; }
+.region-group h2 a:hover { color: var(--accent); }
+.region-group + .region-group { margin-top: 2rem; }

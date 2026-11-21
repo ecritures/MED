@@ -17,7 +17,8 @@ const href = (p = "") => basePath + p;
 // ---------- Interface text (site.config.json → "language") ----------
 const TEXT = {
   nl: {
-    home: "Home", posts: "Artikelen", tags: "Trefwoorden", countriesMenu: "Landen", news: "Nieuws",
+    home: "Home", posts: "Artikelen", tags: "Trefwoorden", countriesMenu: "Landen", news: "Nieuws", otherSites: "Overige locaties",
+    regionIntro: (r, c) => `Werelderfgoed in ${r} (${c}) langs de Middellandse Zee.`,
     allNews: (s) => `Nieuws van ${s}`, noNews: "Hier komt binnenkort nieuws.", related: "Over dit erfgoed", allNewsLink: "Alle nieuwsberichten",
     countryIntro: (c) => `Werelderfgoed in ${c} langs de Middellandse Zee.`, noArticles: "Hier komen binnenkort artikelen.",
     latest: "Erfgoed", allPosts: (s) => `Alle artikelen op ${s}`, allTags: (s) => `Alle trefwoorden op ${s}`,
@@ -46,7 +47,8 @@ const TEXT = {
     articleNav: "Artikelnavigatie", prev: "Vorig artikel", next: "Volgend artikel", current: "Huidig artikel", partOfArticle: "Onderdeel van",
   },
   en: {
-    home: "Home", posts: "Posts", tags: "Tags", countriesMenu: "Countries", news: "News",
+    home: "Home", posts: "Posts", tags: "Tags", countriesMenu: "Countries", news: "News", otherSites: "Other sites",
+    regionIntro: (r, c) => `World Heritage in ${r} (${c}) along the Mediterranean.`,
     allNews: (s) => `News from ${s}`, noNews: "News will appear here soon.", related: "About this heritage", allNewsLink: "All news",
     countryIntro: (c) => `World Heritage in ${c} along the Mediterranean.`, noArticles: "Articles will appear here soon.",
     latest: "Heritage", allPosts: (s) => `All posts on ${s}`, allTags: (s) => `All tags on ${s}`,
@@ -142,7 +144,7 @@ ${jsonld ? `<script type="application/ld+json">\n${JSON.stringify(jsonld, null, 
     <a class="nav-news" href="${href("news/")}">${T.news}</a>
     ${MENU_COUNTRIES.length ? `<details class="nav-menu">
       <summary>${T.countriesMenu}</summary>
-      <ul>${MENU_COUNTRIES.map((c) => `<li><a href="${href(`landen/${slugify(c)}/`)}">${esc(c)}</a></li>`).join("")}</ul>
+      <ul>${countryItems(MENU_COUNTRIES)}</ul>
     </details>` : ""}
   </nav>
 </header>
@@ -393,7 +395,8 @@ function statusLabel(d) {
 }
 
 function homeCard(d) {
-  const countryLinks = (d.heritage?.countries || []).map((c) => `<a href="${href(`landen/${slugify(c.label)}/`)}">${esc(c.label)}</a>`).join("");
+  const countryLinks = (d.heritage?.countries || []).map((c) => `<a href="${href(`landen/${slugify(c.label)}/`)}">${esc(c.label)}</a>` +
+    (regionOf(d) ? `<a href="${href(regionPath(c.label, regionOf(d)))}">${esc(regionOf(d))}</a>` : "")).join("");
   const img = d.heritage?.images?.[0];
   const chev = `<svg viewBox="0 0 20 16" width="14" height="11" aria-hidden="true"><path d="M3 1.5 9.5 8 3 14.5M10 1.5 16.5 8 10 14.5"/></svg>`;
   return `<li class="card card-home${img ? "" : " no-img"}">
@@ -453,7 +456,8 @@ function newsArticle(d, contentHtml) {
 
 function postCard(d, { showCountry = true } = {}) {
   const countries = showCountry ? (d.heritage?.countries || []) : [];
-  const countryLinks = countries.map((c) => `<a href="${href(`landen/${slugify(c.label)}/`)}">${esc(c.label)}</a>`).join(", ");
+  const countryLinks = countries.map((c) => `<a href="${href(`landen/${slugify(c.label)}/`)}">${esc(c.label)}</a>` +
+    (regionOf(d) ? `<a href="${href(regionPath(c.label, regionOf(d)))}">${esc(regionOf(d))}</a>` : "")).join("");
   return `<li class="card">
   <a href="${href(d.path)}"><h3>${esc(d.title)}</h3></a>
   ${countryLinks ? `<p class="card-country">${countryLinks}</p>` : ""}
@@ -527,6 +531,25 @@ if (config.menuFromArticles !== false) {
   if (firstOrder.size) MENU_COUNTRIES = [...firstOrder].sort((a, b) => a[1] - b[1] || a[0].localeCompare(b[0], "nl")).map(([c]) => c);
 }
 const COUNTRY_PAGES = [...new Set([...MENU_COUNTRIES, ...docs.flatMap((d) => (d.heritage?.countries || []).map((c) => c.label))])];
+// Regions within a country (e.g. Sicilië, Sardinië in Italië): `region: Sicilië` in the note.
+const regionOf = (d) => (d.frontmatter?.region ? String(d.frontmatter.region).trim() : "");
+const regionsOf = (country) => [...new Map(docs
+  .filter((d) => regionOf(d) && d.heritage?.countries?.some((c) => c.label === country))
+  .sort((a, b) => orderOf(a) - orderOf(b))
+  .map((d) => [regionOf(d), true])).keys()];
+const groupsOf = (country, list) => {
+  const groups = new Map();
+  for (const d of list) {
+    const r = regionOf(d);
+    if (!groups.has(r)) groups.set(r, []);
+    groups.get(r).push(d);
+  }
+  return [...groups].map(([region, items]) => ({ region, items }));
+};
+const regionPath = (country, region) => `landen/${slugify(country)}/${slugify(region)}/`;
+// A list of countries with their regions as sub-items (menu and homepage).
+const countryItems = (list) => list.map((c) => `<li><a href="${href(`landen/${slugify(c)}/`)}">${esc(c)}</a></li>` +
+  regionsOf(c).map((r) => `<li class="sub"><a href="${href(regionPath(c, r))}">${esc(r)}</a></li>`).join("")).join("");
 
 await fs.rm(DIST, { recursive: true, force: true });
 await fs.mkdir(DIST, { recursive: true });
@@ -540,7 +563,7 @@ for (const m of mediaList) {
 }
 
 // ---------- Content pages ----------
-const countryNotePaths = new Set(COUNTRY_PAGES.map((c) => `landen/${slugify(c)}/`));
+const countryNotePaths = new Set([...COUNTRY_PAGES, ...COUNTRY_PAGES.flatMap(regionsOf)].map((c) => `landen/${slugify(c)}/`));
 for (const d of docs) {
   if (countryNotePaths.has(d.path)) continue; // shown on the country page below
   const isHome = d.path === "";
@@ -587,7 +610,7 @@ ${tagList(d)}
   <div class="home-main">${body}</div>
   <aside class="home-countries" aria-labelledby="home-countries-title">
     <h2 id="home-countries-title">${T.countriesMenu}</h2>
-    <ul>${countries.map((c) => `<li><a href="${href(`landen/${slugify(c)}/`)}">${esc(c)}</a></li>`).join("")}</ul>
+    <ul>${countryItems(countries)}</ul>
   </aside>
 </div>`;
   }
@@ -613,8 +636,34 @@ for (const country of COUNTRY_PAGES) {
     jsonld: { "@context": "https://schema.org", "@type": "CollectionPage", "@id": url, url, name: country,
       isPartOf: { "@id": baseUrl + "#website" }, hasPart: list.map((d) => ({ "@id": d.url + "#main" })) },
     body: `<div class="prose"><h1>${esc(title)}</h1>${noteHtml || `<p class="lede">${esc(T.countryIntro(country))}</p>`}</div>` +
-      (list.length ? `<ul class="cards">${list.map((p) => postCard(p, { showCountry: false })).join("")}</ul>` : `<p class="meta">${T.noArticles}</p>`),
+      (!list.length ? `<p class="meta">${T.noArticles}</p>` : !regionsOf(country).length
+        ? `<ul class="cards">${list.map((p) => postCard(p, { showCountry: false })).join("")}</ul>`
+        // With regions: one block per region (in the order of the list), the rest under "Overige locaties".
+        : groupsOf(country, list).map(({ region, items }) => `<section class="region-group">
+  <h2>${region ? `<a href="${href(regionPath(country, region))}">${esc(region)}</a>` : T.otherSites}</h2>
+  <ul class="cards">${items.map((p) => postCard(p, { showCountry: false })).join("")}</ul>
+</section>`).join("")),
   }));
+}
+
+// ---------- Region pages (landen/<land>/<regio>/) ----------
+for (const country of COUNTRY_PAGES) {
+  for (const region of regionsOf(country)) {
+    const list = docs.filter((d) => regionOf(d) === region && d.heritage?.countries?.some((c) => c.label === country)).sort((a, b) => orderOf(a) - orderOf(b));
+    const url = baseUrl + regionPath(country, region);
+    // Your own text from content/landen/<Regio>.md, if there is one.
+    const note = docs.find((d) => d.path === `landen/${slugify(region)}/`);
+    const noteHtml = note?.markdown?.trim() ? md.parse(note.markdown).replace(/<h1[^>]*>[\s\S]*?<\/h1>\n?/, "") : "";
+    await write(regionPath(country, region), layout({
+      title: `${region} (${country})`,
+      description: note?.frontmatter?.description || T.regionIntro(region, country),
+      url,
+      jsonld: { "@context": "https://schema.org", "@type": "CollectionPage", "@id": url, url, name: region,
+        isPartOf: { "@id": baseUrl + `landen/${slugify(country)}/` }, hasPart: list.map((d) => ({ "@id": d.url + "#main" })) },
+      body: `<div class="prose"><p class="news-kicker"><a href="${href(`landen/${slugify(country)}/`)}">${esc(country)}</a></p><h1>${esc(region)}</h1>${noteHtml || `<p class="lede">${esc(T.regionIntro(region, country))}</p>`}</div>` +
+        `<ul class="cards">${list.map((p) => postCard(p, { showCountry: false })).join("")}</ul>`,
+    }));
+  }
 }
 
 // ---------- News index ----------
