@@ -11,12 +11,7 @@ text_links:
 site_uri: https://ecritures.github.io/MED/posts/medina-van-tetouan/
 ---
 
-Tétouan (Tamazight: ⵜⵉⵟⵟⴰⵡⵉⵏ Tittawin, Arabisch: تطوان) is de hoofdstad van de gelijknamige provincie Tétouan in het noorden van Marokko en het culturele centrum van de regio Tanger-Tétouan-Al Hoceïma. Tétouan heeft zo’n 420.000 inwoners (2024).
+Tétouan (Tamazight: ⵜⵉⵟⵟⴰⵡⵉⵏ Tittawin, Arabisch: تطوان) ligt ongeveer 60 kilometer ten oosten van de stad Tanger en ook niet ver van Ceuta en de Straat van Gibraltar. Tétouan was vanaf de 8e eeuw bijzonder belangrijk in de islamitische periode omdat het diende als de belangrijkste verbinding tussen Marokko en Andalusië. Na de Herovering werd de stad herbouwd door Andalusische vluchtelingen die door de Spanjaarden waren verdreven. Dit wordt goed geïllustreerd door de kunst en architectuur, die duidelijk Andalusische invloeden laten zien. Hoewel Tétouan een van de kleinste Marokkaanse medina's heeft, is de stad het meest compleet en het minst aangetast door latere invloeden van buitenaf. De medina van Tétouan is omringd door een historische muur van ongeveer vijf kilometer lang en toegankelijk via zeven poorten.
 
-De stad ligt ongeveer 60 kilometer ten oosten van de stad Tanger en ook niet ver van Ceuta en de Straat van Gibraltar. De stad bevindt zich in Noord-West Marokko.
-
-## Bevolking
-
-De oorspronkelijke bewoners van Tetouan vormen tegenwoordig de minderheid van circa 25%. De oorspronkelijke bewoners, de 'Tetouaniën' (>Fr.,klemtoon op de laatste lettergreep) genoemd, stammen af van de Andalusiërs die de stad in 1483 hebben gesticht en de eeuwen daarna in grote aantallen vanuit de omgeving Granada naar Marokko vluchtten. De Andalusiërs waren tot aan de jaren 60 van de twintigste eeuw de grootste bevolkingsgroep en woonden voornamelijk in de oude medina. De Tetouaniën spreken Arabisch met een specifiek accent dat lijkt op het Arabisch in Tanger en Chefchaouen, maar ook veel gemeen heeft met het Arabisch in Rabat en Fes.
-
-Bron: Nederlandstalige Wikipedia, [Tétouan](https://nl.wikipedia.org/wiki/T%C3%A9touan), licentie CC BY-SA 4.0.
+Bron: Nederlandstalige Wikipedia, [Tétouan](https://nl.wikipedia.org/wiki/T%C3%A9touan), licentie CC BY-SA 4.0
+Bron: Unesco.nl, licentie CC BY-SA 4.0
