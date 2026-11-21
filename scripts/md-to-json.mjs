@@ -58,7 +58,11 @@ const all = await walk(CONTENT);
 const lastEdited = new Map();
 const firstCommitted = new Map(); // oldest commit per file: when the note was created
 try {
-  const log = execFileSync("git", ["log", "--format=@%cI", "--name-only", "--", "content"], { cwd: ROOT, encoding: "utf8", maxBuffer: 64 * 1024 * 1024, stdio: ["ignore", "pipe", "ignore"] });
+  const git = (args) => execFileSync("git", args, { cwd: ROOT, encoding: "utf8", maxBuffer: 64 * 1024 * 1024, stdio: ["ignore", "pipe", "ignore"] });
+  // GitHub Actions checks out only the latest commit by default; fetch the full history so dates are right.
+  try { if (git(["rev-parse", "--is-shallow-repository"]).trim() === "true") git(["fetch", "--unshallow", "--quiet"]); } catch {}
+  // core.quotepath=false: file names with é, ’ … come out as written, not as "\303\251" escapes.
+  const log = git(["-c", "core.quotepath=false", "log", "--format=@%cI", "--name-only", "--", "content"]);
   let when = null;
   for (const line of log.split("\n")) {
     if (line.startsWith("@")) when = line.slice(1);
