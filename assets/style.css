@@ -488,3 +488,20 @@ article::after { content: ""; display: block; clear: both; }
   .site-header { flex-wrap: nowrap; gap: .6rem; }
   .site-header nav { gap: .9rem; font-size: .95rem; white-space: nowrap; }
 }
+
+/* ---------- Homepage: title above the map, countries on the right ---------- */
+.home-title { width: min(100% - 2rem, 76rem); margin-inline: auto; padding: 1.6rem 0 1.2rem; }
+.home-title h1 { margin: 0; font: 400 clamp(2rem, 4.6vw, 3.6rem)/1.08 var(--display); letter-spacing: .01em; color: var(--ink); text-wrap: balance; }
+.home-grid { display: grid; grid-template-columns: minmax(0, 1fr) 15rem; gap: 2.5rem; align-items: start; }
+.home-main > .prose:first-child > :first-child { margin-top: 0; }
+.home-countries { position: sticky; top: 1.5rem; }
+.home-countries h2 { margin: 0 0 .7rem; font: 600 1.35rem/1.3 var(--text); }
+.home-countries ul { list-style: none; margin: 0; padding: .35rem 0; background: var(--accent); border-radius: 2px; }
+.home-countries a { display: block; padding: .5rem 1rem; color: #fff; text-decoration: none; }
+.home-countries a:hover, .home-countries a:focus-visible { background: #7f2e22; color: #fff; outline: none; }
+@media (max-width: 860px) {
+  .home-grid { grid-template-columns: minmax(0, 1fr); }
+  .home-countries { position: static; }
+  .home-countries ul { columns: 2; column-gap: 0; }
+  .home-countries li { break-inside: avoid; }
+}

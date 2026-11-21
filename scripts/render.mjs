@@ -562,7 +562,13 @@ for (const d of docs) {
     await write(d.path, layout({ title: d.title, description: d.description, url: d.url, jsonld: d.jsonld, body: newsArticle(d, content) }));
     continue;
   }
-  content = hasH1 ? content.replace(/(<\/h1>\n?)/, `$1${metaHtml}`) : `<h1>${esc(d.title)}</h1>\n${metaHtml}${content}`;
+  // Homepage: the H1 of index.md goes above the map, over the full width.
+  let homeTitle = "";
+  if (isHome) {
+    const m = content.match(/<h1[^>]*>([\s\S]*?)<\/h1>\n?/);
+    homeTitle = m ? m[1] : esc(d.title);
+    content = m ? content.replace(m[0], "") : content;
+  } else content = hasH1 ? content.replace(/(<\/h1>\n?)/, `$1${metaHtml}`) : `<h1>${esc(d.title)}</h1>\n${metaHtml}${content}`;
   let body = `<article class="prose">
 ${content}
 ${tagList(d)}
@@ -574,7 +580,19 @@ ${tagList(d)}
     const recent = [...posts].sort((a, b) => (Date.parse(b.edited) || 0) - (Date.parse(a.edited) || 0) || orderOf(a) - orderOf(b)).slice(0, Number(config.homeCount) || 10);
     body += `<section><h2>${T.latest}</h2><ul class="cards">${recent.map(homeCard).join("")}</ul></section>`;
   }
-  await write(d.path, layout({ title: d.title, description: d.description, url: d.url, jsonld: d.jsonld, body, map: isHome, hero: isHome ? overviewMap() : "" }));
+  if (isHome) {
+    // Right-hand column: every country, alphabetical, in the style of the Landen menu.
+    const countries = [...COUNTRY_PAGES].sort((a, b) => a.localeCompare(b, config.language));
+    body = `<div class="home-grid">
+  <div class="home-main">${body}</div>
+  <aside class="home-countries" aria-labelledby="home-countries-title">
+    <h2 id="home-countries-title">${T.countriesMenu}</h2>
+    <ul>${countries.map((c) => `<li><a href="${href(`landen/${slugify(c)}/`)}">${esc(c)}</a></li>`).join("")}</ul>
+  </aside>
+</div>`;
+  }
+  const hero = isHome ? `<div class="home-title"><h1>${homeTitle}</h1></div>\n${overviewMap()}` : "";
+  await write(d.path, layout({ title: d.title, description: d.description, url: d.url, jsonld: d.jsonld, body, map: isHome, hero }));
 }
 
 // ---------- Country pages (menu "Landen") ----------
