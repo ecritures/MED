@@ -657,7 +657,9 @@ for (const country of COUNTRY_PAGES) {
   const title = note?.frontmatter?.title || country;
   const cards = (items) => (items.length ? `<ul class="cards">${items.map(homeCard).join("")}</ul>` : "");
   const loose = list.filter((d) => !regionOf(d));
-  const main = `<div class="prose"><h1>${esc(title)}</h1>${intro ? md.parse(intro) : `<p class="lede">${esc(T.countryIntro(country))}</p>`}</div>` +
+  // Flag of the country (Wikidata P41), taken from the articles in this country.
+  const flag = list.flatMap((d) => d.heritage?.countries || []).find((c) => c.label === country && c.flag)?.flag;
+  const main = `<div class="prose"><h1 class="country-title">${esc(title)}${flag ? ` <img class="country-flag" src="${esc(flag)}" alt="" width="45" height="30">` : ""}</h1>${intro ? md.parse(intro) : `<p class="lede">${esc(T.countryIntro(country))}</p>`}</div>` +
     (!list.length ? `<p class="meta">${T.noArticles}</p>` : cards(loose)) +
     regions.map((r) => `<section class="region-group" id="${slugify(r)}">
   <h2>${esc(r)}</h2>

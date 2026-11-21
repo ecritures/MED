@@ -515,6 +515,8 @@ article::after { content: ""; display: block; clear: both; }
 .region-group + .region-group { margin-top: 2rem; }
 
 /* Country page: region sections */
+.country-title { color: var(--accent); }
+.country-flag { display: inline-block; height: .62em; width: auto; margin-left: .1em; vertical-align: .02em; box-shadow: 0 0 0 1px var(--rule); border-radius: 1px; }
 .region-group { scroll-margin-top: 1rem; }
 .region-group h2 { margin: 2.6rem 0 .6rem; font: 400 clamp(1.6rem, 3vw, 2.1rem)/1.15 var(--display); }
 .region-text { margin-bottom: .5rem; }
