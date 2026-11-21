@@ -645,6 +645,14 @@ function splitCountryNote(markdown, regions) {
   }
   return { intro: intro.join("").replace(/^# .*\n/m, "").trim(), regionText };
 }
+// Flag of a region: the administrative area (Wikidata P131 chain of its articles) with the
+// same name as the region, when that area has a flag (P41). "Valencia (regio)" matches "Valencia".
+function regionFlag(list, region) {
+  const norm = (s) => String(s || "").replace(/\s*\(.*\)\s*$/, "").trim().toLowerCase();
+  return list.filter((d) => regionOf(d) === region)
+    .flatMap((d) => d.heritage?.areas || [])
+    .find((a) => a.flag && norm(a.label) === norm(region))?.flag || null;
+}
 for (const country of COUNTRY_PAGES) {
   const list = docs
     .filter((d) => d.heritage?.countries?.some((c) => c.label === country))
@@ -662,7 +670,7 @@ for (const country of COUNTRY_PAGES) {
   const main = `<div class="prose"><h1 class="country-title">${esc(title)}${flag ? ` <img class="country-flag" src="${esc(flag)}" alt="" width="45" height="30">` : ""}</h1>${intro ? md.parse(intro) : `<p class="lede">${esc(T.countryIntro(country))}</p>`}</div>` +
     (!list.length ? `<p class="meta">${T.noArticles}</p>` : cards(loose)) +
     regions.map((r) => `<section class="region-group" id="${slugify(r)}">
-  <h2>${esc(r)}</h2>
+  <h2>${esc(r)}${regionFlag(list, r) ? ` <img class="country-flag" src="${esc(regionFlag(list, r))}" alt="" width="45" height="30">` : ""}</h2>
   ${regionText.get(r) ? `<div class="prose region-text">${md.parse(regionText.get(r))}</div>` : ""}
   ${cards(list.filter((d) => regionOf(d) === r))}
 </section>`).join("");

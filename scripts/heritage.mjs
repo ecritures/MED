@@ -177,6 +177,24 @@ export async function getHeritage(qid, lang = "en", imageOverride = null) {
       flag: flagFile ? commonsUrl(flagFile, 64) : null, // P41 flag image
     };
   });
+  // Administrative areas the site lies in (P131 chain, up to five levels, stopping at the country),
+  // with their flag (P41) when they have one. Used for the flag of a region on a country page.
+  const areas = [];
+  try {
+    const seen = new Set(countryIds);
+    let level = placeIds.filter((id) => !seen.has(id));
+    for (let depth = 0; level.length && depth < 5; depth++) {
+      level.forEach((id) => seen.add(id));
+      const items = await getEntities(level, lang, "labels|claims");
+      for (const id of level) {
+        const file = bestStatements(items[id]?.claims?.P41)[0]?.mainsnak.datavalue?.value || null;
+        areas.push({ id, label: pick(items[id]?.labels, lang) || id, flag: file ? commonsUrl(file, 64) : null });
+      }
+      level = [...new Set(level.flatMap((id) => itemIdsOf(items[id]?.claims || {}, "P131")))].filter((id) => !seen.has(id));
+    }
+  } catch (err) {
+    console.warn(`  ! administrative areas of ${qid}: ${err.message}`);
+  }
   const criteria = criteriaIds
     .map((id) => {
       const label = pick(linked[id]?.labels, lang) || id;
@@ -218,6 +236,7 @@ export async function getHeritage(qid, lang = "en", imageOverride = null) {
     unescoUrl: `https://whc.unesco.org/en/list/${encodeURIComponent(String(whsId).match(/^\d+/)?.[0] || String(whsId))}`,
     year: years[0] ?? null,
     countries,
+    areas,
     regions: [...new Set(countries.map((c) => c.region).filter(Boolean))],
     criteria,
     images,
