@@ -1,7 +1,8 @@
 ---
 wikidata: Q64860434
-title: "Cultuurlandschap van de Serra de Tramuntana"
-subtitle: "Werelderfgoedlocatie op Mallorca (Spanje)"
+title: Cultuurlandschap van de Serra de Tramuntana
+subtitle: Werelderfgoedlocatie op Mallorca (Spanje)
+region: Mallorca
 order: 8
 distance: 0
 img_uri:

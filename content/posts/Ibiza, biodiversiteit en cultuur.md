@@ -1,7 +1,8 @@
 ---
 wikidata: Q11918155
-title: "Ibiza, biodiversiteit en cultuur"
-subtitle: "Werelderfgoedlocatie op Ibiza (Spanje)"
+title: Ibiza, biodiversiteit en cultuur
+subtitle: Werelderfgoedlocatie op Ibiza (Spanje)
+region: Ibiza
 order: 7
 distance: 0
 img_uri:

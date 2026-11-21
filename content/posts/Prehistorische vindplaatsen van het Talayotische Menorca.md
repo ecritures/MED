@@ -1,7 +1,8 @@
 ---
 wikidata: Q64990632
-title: "Prehistorische vindplaatsen van het Talayotische Menorca"
-subtitle: "Werelderfgoedlocatie op Menorca (Spanje)"
+title: Prehistorische vindplaatsen van het Talayotische Menorca
+subtitle: Werelderfgoedlocatie op Menorca (Spanje)
+region: Menorca
 order: 9
 distance: 0
 img_uri:
