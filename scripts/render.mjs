@@ -17,7 +17,8 @@ const href = (p = "") => basePath + p;
 // ---------- Interface text (site.config.json → "language") ----------
 const TEXT = {
   nl: {
-    home: "Home", posts: "Artikelen", tags: "Trefwoorden", countriesMenu: "Landen",
+    home: "Home", posts: "Artikelen", tags: "Trefwoorden", countriesMenu: "Landen", news: "Nieuws",
+    allNews: (s) => `Nieuws van ${s}`, noNews: "Hier komt binnenkort nieuws.", related: "Over dit erfgoed", allNewsLink: "Alle nieuwsberichten",
     countryIntro: (c) => `Werelderfgoed in ${c} langs de Middellandse Zee.`, noArticles: "Hier komen binnenkort artikelen.",
     latest: "Erfgoed", allPosts: (s) => `Alle artikelen op ${s}`, allTags: (s) => `Alle trefwoorden op ${s}`,
     tag: (t) => `Trefwoord: ${t}`, pagesAbout: (t) => `Pagina's over ${t}`, linkedTo: "Gekoppeld aan",
@@ -45,7 +46,8 @@ const TEXT = {
     articleNav: "Artikelnavigatie", prev: "Vorig artikel", next: "Volgend artikel", current: "Huidig artikel", partOfArticle: "Onderdeel van",
   },
   en: {
-    home: "Home", posts: "Posts", tags: "Tags", countriesMenu: "Countries",
+    home: "Home", posts: "Posts", tags: "Tags", countriesMenu: "Countries", news: "News",
+    allNews: (s) => `News from ${s}`, noNews: "News will appear here soon.", related: "About this heritage", allNewsLink: "All news",
     countryIntro: (c) => `World Heritage in ${c} along the Mediterranean.`, noArticles: "Articles will appear here soon.",
     latest: "Heritage", allPosts: (s) => `All posts on ${s}`, allTags: (s) => `All tags on ${s}`,
     tag: (t) => `Tag: ${t}`, pagesAbout: (t) => `Pages about ${t}`, linkedTo: "Linked to",
@@ -137,6 +139,7 @@ ${jsonld ? `<script type="application/ld+json">\n${JSON.stringify(jsonld, null, 
   <a class="site-title" href="${href()}">${esc(config.title)}${LOGO_WAVES}</a>
   <nav>
     <a class="nav-home" href="${href()}">${T.home}</a>
+    <a class="nav-news" href="${href("news/")}">${T.news}</a>
     ${MENU_COUNTRIES.length ? `<details class="nav-menu">
       <summary>${T.countriesMenu}</summary>
       <ul>${MENU_COUNTRIES.map((c) => `<li><a href="${href(`landen/${slugify(c)}/`)}">${esc(c)}</a></li>`).join("")}</ul>
@@ -405,6 +408,48 @@ function homeCard(d) {
 </li>`;
 }
 
+// ---------- News ----------
+const chevOne = `<svg class="chev-one" viewBox="0 0 12 16" width="9" height="12" aria-hidden="true"><path d="M2.5 1.5 9 8l-6.5 6.5"/></svg>`;
+// Optional photo: `img_uri` (Commons link) or an image in the note itself.
+function newsImage(d) {
+  const f = d.frontmatter?.img_uri;
+  if (!f) return null;
+  const name = String(f).replace(/^.*\/(?:wiki\/)?(?:File|Bestand):/i, "").replace(/^(?:File|Bestand):/i, "").split(/[?#]/)[0];
+  const file = decodeURIComponent(name).replace(/_/g, " ");
+  return { src: `https://commons.wikimedia.org/wiki/Special:FilePath/${encodeURIComponent(file)}?width=1200`, page: `https://commons.wikimedia.org/wiki/File:${encodeURIComponent(file.replace(/ /g, "_"))}` };
+}
+
+function newsCard(d) {
+  const img = newsImage(d);
+  const day = newsDate(d);
+  return `<li class="card card-home card-news${img ? "" : " no-img"}">
+  <div class="card-head">
+    <a class="card-title" href="${href(d.path)}"><h3>${esc(d.title)}</h3></a>
+    ${day ? `<span class="card-status card-status-head"><time datetime="${day}">${fmtDate(day)}</time></span>` : ""}
+  </div>
+  ${day ? `<p class="card-country"><span class="card-status"><time datetime="${day}">${fmtDate(day)}</time></span></p>` : ""}
+  ${img ? `<a class="card-img" href="${href(d.path)}" tabindex="-1" aria-hidden="true"><img src="${esc(img.src)}" alt="" loading="lazy"></a>` : ""}
+  <p class="card-text">${esc(d.firstParagraph || d.description)}</p>
+  <a class="card-more" href="${href(d.path)}" aria-label="${esc(T.readMoreAbout(d.title))}">${T.readOn} ${chevOne}</a>
+  <div class="card-waves" aria-hidden="true"></div>
+</li>`;
+}
+
+function newsArticle(d, contentHtml) {
+  const img = newsImage(d);
+  const day = newsDate(d);
+  const body = contentHtml.replace(/<h1[^>]*>[\s\S]*?<\/h1>\n?/, "");
+  const rel = relatedOf(d);
+  return `<article class="news-article prose" id="main">
+  <p class="news-kicker"><a href="${href("news/")}">${T.news}</a>${day ? ` · <time datetime="${day}">${fmtDate(day)}</time>` : ""}</p>
+  <h1>${esc(d.title)}</h1>
+  ${img ? `<figure class="news-photo"><a href="${esc(img.page)}" rel="noopener"><img src="${esc(img.src)}" alt=""></a></figure>` : ""}
+  ${body}
+  ${rel.length ? `<h2 class="news-related-title">${T.related}</h2><ul class="h-subs news-related">${rel.map((r) => `<li><a href="${href(r.path)}">${esc(r.title)}</a></li>`).join("")}</ul>` : ""}
+  <p class="news-back"><a href="${href("news/")}">${chevOne.replace('class="', 'class="flip ')} ${T.allNewsLink}</a></p>
+</article>`;
+}
+
 function postCard(d, { showCountry = true } = {}) {
   const countries = showCountry ? (d.heritage?.countries || []) : [];
   const countryLinks = countries.map((c) => `<a href="${href(`landen/${slugify(c.label)}/`)}">${esc(c.label)}</a>`).join(", ");
@@ -458,6 +503,16 @@ const orderOf = (d) => (Number.isFinite(Number(d.frontmatter?.order)) && d.front
 const posts = docs
   .filter((d) => d.type === "BlogPosting" || d.path.startsWith("posts/"))
   .sort((a, b) => orderOf(a) - orderOf(b) || (b.date || "").localeCompare(a.date || ""));
+// News: notes in content/news/, newest first. Date = `date` in the note, else when it was first published.
+const newsDate = (d) => d.date || (d.created ? d.created.slice(0, 10) : "") || (d.edited ? d.edited.slice(0, 10) : "");
+const news = docs
+  .filter((d) => d.type === "NewsArticle" || (d.path.startsWith("news/") && d.path !== "news/"))
+  .sort((a, b) => newsDate(b).localeCompare(newsDate(a)) || a.title.localeCompare(b.title, "nl"));
+// `related: ["[[Troje]]"]` in a news note → red buttons to those heritage articles.
+const relatedOf = (d) => [].concat(d.frontmatter?.related || [])
+  .map((ref) => docByName.get(docKey(String(ref).match(/\[\[([^\]|#]+)/)?.[1] ?? String(ref))))
+  .filter((x, i, a) => x && x !== d && a.indexOf(x) === i);
+
 // A country page for every country in the menu and every country that has an article.
 if (config.menuFromArticles !== false) {
   const firstOrder = new Map();
@@ -502,6 +557,10 @@ for (const d of docs) {
     await write(d.path, layout({ title: d.title, description: d.description, url: d.url, jsonld: d.jsonld, body: heritageArticle(d, content, ordered), map: Boolean(d.heritage.coordinates) }));
     continue;
   }
+  if (news.includes(d)) {
+    await write(d.path, layout({ title: d.title, description: d.description, url: d.url, jsonld: d.jsonld, body: newsArticle(d, content) }));
+    continue;
+  }
   content = hasH1 ? content.replace(/(<\/h1>\n?)/, `$1${metaHtml}`) : `<h1>${esc(d.title)}</h1>\n${metaHtml}${content}`;
   let body = `<article class="prose">
 ${content}
@@ -536,6 +595,20 @@ for (const country of COUNTRY_PAGES) {
       isPartOf: { "@id": baseUrl + "#website" }, hasPart: list.map((d) => ({ "@id": d.url + "#main" })) },
     body: `<div class="prose"><h1>${esc(title)}</h1>${noteHtml || `<p class="lede">${esc(T.countryIntro(country))}</p>`}</div>` +
       (list.length ? `<ul class="cards">${list.map((p) => postCard(p, { showCountry: false })).join("")}</ul>` : `<p class="meta">${T.noArticles}</p>`),
+  }));
+}
+
+// ---------- News index ----------
+if (!docs.some((d) => d.path === "news/")) {
+  const url = baseUrl + "news/";
+  await write("news", layout({
+    title: T.news,
+    description: T.allNews(config.title),
+    url,
+    jsonld: { "@context": "https://schema.org", "@type": "CollectionPage", "@id": url, url, name: T.news,
+      isPartOf: { "@id": baseUrl + "#website" }, hasPart: news.map((p) => ({ "@id": p.url + "#main" })) },
+    body: `<div class="prose"><h1>${T.news}</h1></div>` +
+      (news.length ? `<ul class="cards">${news.map(newsCard).join("")}</ul>` : `<p class="meta">${T.noNews}</p>`),
   }));
 }
 
@@ -605,7 +678,7 @@ await fs.writeFile(path.join(DIST, "404.html"), layout({
   body: `<h1>${T.notFound}</h1><p><a href="${href()}">${T.goHome}</a></p>`,
 }));
 
-const urls = [...docs.map((d) => ({ loc: d.url, lastmod: d.updated || d.date })), { loc: baseUrl + "posts/" }, { loc: baseUrl + "tags/" }];
+const urls = [...docs.map((d) => ({ loc: d.url, lastmod: d.updated || d.date })), { loc: baseUrl + "posts/" }, { loc: baseUrl + "news/" }, { loc: baseUrl + "tags/" }];
 await fs.writeFile(path.join(DIST, "sitemap.xml"),
   `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls
     .map((u) => `  <url><loc>${esc(u.loc)}</loc>${u.lastmod ? `<lastmod>${u.lastmod}</lastmod>` : ""}</url>`)

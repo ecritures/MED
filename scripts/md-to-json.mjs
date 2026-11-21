@@ -187,7 +187,7 @@ for (const n of notes) {
     id: n.relNoExt,
     source: `content/${n.rel}`,
     path: n.urlPath,
-    type: fm.type || (n.rel.startsWith("posts/") ? "BlogPosting" : "WebPage"),
+    type: fm.type || (n.rel.startsWith("posts/") ? "BlogPosting" : n.rel.startsWith("news/") ? "NewsArticle" : "WebPage"),
     title: fm.title || headings.find((h) => h.depth === 1)?.text || n.name,
     description: fm.description || plain.slice(0, 160),
     // The first paragraph as plain text (for the cards on the homepage).
