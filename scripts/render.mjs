@@ -17,7 +17,7 @@ const href = (p = "") => basePath + p;
 // ---------- Interface text (site.config.json → "language") ----------
 const TEXT = {
   nl: {
-    home: "Home", posts: "Artikelen", tags: "Trefwoorden", countriesMenu: "Landen", news: "Nieuws", otherSites: "Overige locaties",
+    home: "Home", posts: "Artikelen", tags: "Trefwoorden", countriesMenu: "Landen", news: "Nieuws", otherSites: "Overige locaties", regionsTitle: "Regio's",
     regionIntro: (r, c) => `Werelderfgoed in ${r} (${c}) langs de Middellandse Zee.`,
     allNews: (s) => `Nieuws van ${s}`, noNews: "Hier komt binnenkort nieuws.", related: "Over dit erfgoed", allNewsLink: "Alle nieuwsberichten",
     countryIntro: (c) => `Werelderfgoed in ${c} langs de Middellandse Zee.`, noArticles: "Hier komen binnenkort artikelen.",
@@ -47,7 +47,7 @@ const TEXT = {
     articleNav: "Artikelnavigatie", prev: "Vorig artikel", next: "Volgend artikel", current: "Huidig artikel", partOfArticle: "Onderdeel van",
   },
   en: {
-    home: "Home", posts: "Posts", tags: "Tags", countriesMenu: "Countries", news: "News", otherSites: "Other sites",
+    home: "Home", posts: "Posts", tags: "Tags", countriesMenu: "Countries", news: "News", otherSites: "Other sites", regionsTitle: "Regions",
     regionIntro: (r, c) => `World Heritage in ${r} (${c}) along the Mediterranean.`,
     allNews: (s) => `News from ${s}`, noNews: "News will appear here soon.", related: "About this heritage", allNewsLink: "All news",
     countryIntro: (c) => `World Heritage in ${c} along the Mediterranean.`, noArticles: "Articles will appear here soon.",
@@ -203,11 +203,13 @@ ${rows ? `<dl>\n${rows}\n</dl>` : ""}
 // The coordinates sit exactly in the centre, under the marker. No JavaScript needed.
 // Overview map of the whole Mediterranean with every World Heritage location (homepage).
 const MED_BOUNDS = [[30.2, -6.2], [46.2, 36.4]]; // south-west and north-east corners
-function overviewMap() {
-  const lat = 38.2, lon = 15.1, km = 3800;
+function overviewMap(bounds = MED_BOUNDS) {
+  // Static fallback (no JavaScript): centred on the bounds, wide enough to show them.
+  const lat = (bounds[0][0] + bounds[1][0]) / 2, lon = (bounds[0][1] + bounds[1][1]) / 2;
+  const km = Math.max(300, (bounds[1][1] - bounds[0][1]) * 111.32 * Math.cos((lat * Math.PI) / 180) * 1.1);
   const layer = mapLayer(lat, lon, km);
   return `<figure class="h-map h-overview home-map">
-  <div class="h-map-frame" data-lat="${lat}" data-lon="${lon}" data-km="${km}" data-overview="${esc(JSON.stringify(MED_BOUNDS))}" data-points="${href("assets/map-points.json")}" data-base="${href()}" data-text="${esc(JSON.stringify({ zoomIn: T.zoomIn, zoomOut: T.zoomOut, readMore: T.readMore, onWikidata: T.onWikidata }))}" role="img" aria-label="${esc(T.medMap)}">
+  <div class="h-map-frame" data-lat="${lat}" data-lon="${lon}" data-km="${km}" data-overview="${esc(JSON.stringify(bounds))}" data-points="${href("assets/map-points.json")}" data-base="${href()}" data-text="${esc(JSON.stringify({ zoomIn: T.zoomIn, zoomOut: T.zoomOut, readMore: T.readMore, onWikidata: T.onWikidata }))}" role="img" aria-label="${esc(T.medMap)}">
     <span class="h-map-tiles">${layer.tiles}</span>
     <span class="h-scale" style="width:${layer.barWidth}">${layer.barLabel}</span>
     <div class="h-zoom" hidden>
@@ -396,7 +398,7 @@ function statusLabel(d) {
 
 function homeCard(d) {
   const countryLinks = (d.heritage?.countries || []).map((c) => `<a href="${href(`landen/${slugify(c.label)}/`)}">${esc(c.label)}</a>` +
-    (regionOf(d) ? `<a href="${href(regionPath(c.label, regionOf(d)))}">${esc(regionOf(d))}</a>` : "")).join("");
+    (regionOf(d) ? `<a href="${href(`landen/${slugify(c.label)}/`)}#${slugify(regionOf(d))}">${esc(regionOf(d))}</a>` : "")).join("");
   const img = d.heritage?.images?.[0];
   const chev = `<svg viewBox="0 0 20 16" width="14" height="11" aria-hidden="true"><path d="M3 1.5 9.5 8 3 14.5M10 1.5 16.5 8 10 14.5"/></svg>`;
   return `<li class="card card-home${img ? "" : " no-img"}">
@@ -457,7 +459,7 @@ function newsArticle(d, contentHtml) {
 function postCard(d, { showCountry = true } = {}) {
   const countries = showCountry ? (d.heritage?.countries || []) : [];
   const countryLinks = countries.map((c) => `<a href="${href(`landen/${slugify(c.label)}/`)}">${esc(c.label)}</a>` +
-    (regionOf(d) ? `<a href="${href(regionPath(c.label, regionOf(d)))}">${esc(regionOf(d))}</a>` : "")).join("");
+    (regionOf(d) ? `<a href="${href(`landen/${slugify(c.label)}/`)}#${slugify(regionOf(d))}">${esc(regionOf(d))}</a>` : "")).join("");
   return `<li class="card">
   <a href="${href(d.path)}"><h3>${esc(d.title)}</h3></a>
   ${countryLinks ? `<p class="card-country">${countryLinks}</p>` : ""}
@@ -547,9 +549,8 @@ const groupsOf = (country, list) => {
   return [...groups].map(([region, items]) => ({ region, items }));
 };
 const regionPath = (country, region) => `landen/${slugify(country)}/${slugify(region)}/`;
-// A list of countries with their regions as sub-items (menu and homepage).
-const countryItems = (list) => list.map((c) => `<li><a href="${href(`landen/${slugify(c)}/`)}">${esc(c)}</a></li>` +
-  regionsOf(c).map((r) => `<li class="sub"><a href="${href(regionPath(c, r))}">${esc(r)}</a></li>`).join("")).join("");
+// A list of countries for the menu and the homepage (only countries; regions are reached via the country page).
+const countryItems = (list) => list.map((c) => `<li><a href="${href(`landen/${slugify(c)}/`)}">${esc(c)}</a></li>`).join("");
 
 await fs.rm(DIST, { recursive: true, force: true });
 await fs.mkdir(DIST, { recursive: true });
@@ -619,30 +620,67 @@ ${tagList(d)}
 }
 
 // ---------- Country pages (menu "Landen") ----------
-// Articles are placed by their country on Wikidata (P17), in `order`.
+// Articles are placed by their country on Wikidata (P17), in `order`. Layout:
+//   map zoomed in on the country · country name + your text · articles without a region ·
+//   per region (`region:` in the article): heading, your text for that region, its articles.
+// Your text comes from content/landen/<Land>.md: the text before the first "## …" heading is the
+// introduction; a "## Sicilië" section is the text for that region (other ## sections stay in the introduction).
+const boundsOf = (list) => {
+  const pts = list.map((d) => d.heritage?.coordinates).filter(Boolean);
+  if (!pts.length) return MED_BOUNDS;
+  let s = Math.min(...pts.map((p) => p.latitude)), n = Math.max(...pts.map((p) => p.latitude));
+  let w = Math.min(...pts.map((p) => p.longitude)), e = Math.max(...pts.map((p) => p.longitude));
+  // at least ~2.5° across, plus a margin, so a single site is not zoomed in to street level
+  const padLat = Math.max(0.6, (n - s) * 0.15, (2.5 - (n - s)) / 2), padLon = Math.max(0.8, (e - w) * 0.15, (3.5 - (e - w)) / 2);
+  return [[+(s - padLat).toFixed(3), +(w - padLon).toFixed(3)], [+(n + padLat).toFixed(3), +(e + padLon).toFixed(3)]];
+};
+function splitCountryNote(markdown, regions) {
+  const intro = [], regionText = new Map();
+  let current = intro;
+  for (const part of String(markdown || "").split(/^(?=## )/m)) {
+    const h = part.match(/^## +(.+?)\s*\n/);
+    const name = h && regions.find((r) => r.toLowerCase() === h[1].trim().toLowerCase());
+    if (name) regionText.set(name, part.slice(h[0].length).trim());
+    else intro.push(part);
+  }
+  return { intro: intro.join("").replace(/^# .*\n/m, "").trim(), regionText };
+}
 for (const country of COUNTRY_PAGES) {
   const list = docs
     .filter((d) => d.heritage?.countries?.some((c) => c.label === country))
-    .sort((a, b) => (Number(a.frontmatter?.order) || 1e9) - (Number(b.frontmatter?.order) || 1e9));
-  const url = baseUrl + `landen/${slugify(country)}/`;
-  // Your own text from content/landen/<Land>.md, shown above the list.
-  const note = docs.find((d) => d.path === `landen/${slugify(country)}/`);
-  const noteHtml = note?.markdown?.trim() ? md.parse(note.markdown).replace(/<h1[^>]*>[\s\S]*?<\/h1>\n?/, "") : "";
+    .sort((a, b) => orderOf(a) - orderOf(b));
+  const slug = slugify(country);
+  const url = baseUrl + `landen/${slug}/`;
+  const regions = regionsOf(country);
+  const note = docs.find((d) => d.path === `landen/${slug}/`);
+  const { intro, regionText } = splitCountryNote(note?.markdown, regions);
   const title = note?.frontmatter?.title || country;
-  await write(`landen/${slugify(country)}`, layout({
+  const cards = (items) => (items.length ? `<ul class="cards">${items.map(homeCard).join("")}</ul>` : "");
+  const loose = list.filter((d) => !regionOf(d));
+  const main = `<div class="prose"><h1>${esc(title)}</h1>${intro ? md.parse(intro) : `<p class="lede">${esc(T.countryIntro(country))}</p>`}</div>` +
+    (!list.length ? `<p class="meta">${T.noArticles}</p>` : cards(loose)) +
+    regions.map((r) => `<section class="region-group" id="${slugify(r)}">
+  <h2>${esc(r)}</h2>
+  ${regionText.get(r) ? `<div class="prose region-text">${md.parse(regionText.get(r))}</div>` : ""}
+  ${cards(list.filter((d) => regionOf(d) === r))}
+</section>`).join("");
+  // Right-hand column: the regions of this country (only when it has any).
+  const body = regions.length ? `<div class="home-grid">
+  <div class="home-main">${main}</div>
+  <aside class="home-countries" aria-labelledby="regions-title">
+    <h2 id="regions-title">${T.regionsTitle}</h2>
+    <ul>${regions.map((r) => `<li><a href="#${slugify(r)}">${esc(r)}</a></li>`).join("")}</ul>
+  </aside>
+</div>` : main;
+  await write(`landen/${slug}`, layout({
     title,
     description: note?.frontmatter?.description || T.countryIntro(country),
     url,
     jsonld: { "@context": "https://schema.org", "@type": "CollectionPage", "@id": url, url, name: country,
       isPartOf: { "@id": baseUrl + "#website" }, hasPart: list.map((d) => ({ "@id": d.url + "#main" })) },
-    body: `<div class="prose"><h1>${esc(title)}</h1>${noteHtml || `<p class="lede">${esc(T.countryIntro(country))}</p>`}</div>` +
-      (!list.length ? `<p class="meta">${T.noArticles}</p>` : !regionsOf(country).length
-        ? `<ul class="cards">${list.map((p) => postCard(p, { showCountry: false })).join("")}</ul>`
-        // With regions: one block per region (in the order of the list), the rest under "Overige locaties".
-        : groupsOf(country, list).map(({ region, items }) => `<section class="region-group">
-  <h2>${region ? `<a href="${href(regionPath(country, region))}">${esc(region)}</a>` : T.otherSites}</h2>
-  <ul class="cards">${items.map((p) => postCard(p, { showCountry: false })).join("")}</ul>
-</section>`).join("")),
+    body,
+    map: true,
+    hero: overviewMap(boundsOf(list)),
   }));
 }
 
