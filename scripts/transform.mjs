@@ -77,10 +77,15 @@ async function enrich(doc) {
   let heritage = null;
   const loadErrors = [];
   if (subjectId && !offline) {
-    try {
-      heritage = await getHeritage(subjectId, lang, fm.img_uri);
-    } catch (err) {
-      loadErrors.push(err.message);
+    // Wikidata sometimes refuses a request for a moment: try a second time after a pause.
+    for (let attempt = 1; attempt <= 2 && !heritage; attempt++) {
+      try {
+        heritage = await getHeritage(subjectId, lang, fm.img_uri);
+      } catch (err) {
+        loadErrors.push(err.message);
+        console.warn(`  ! ${doc.source}: World Heritage data (attempt ${attempt}): ${err.message}`);
+        if (attempt === 1) await new Promise((r) => setTimeout(r, 5000));
+      }
     }
   }
   if (heritage) {

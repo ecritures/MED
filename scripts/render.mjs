@@ -40,7 +40,7 @@ const TEXT = {
     distance: "Afstand tot de Middellandse Zee", onCoast: "aan de kust",
     statusNew: "Nieuw!", statusUpdated: "Bijgewerkt",
     readOn: "Lees verder", readMoreAbout: (t) => `Lees verder over ${t}`,
-    medMap: "Kaart van de Middellandse Zee met alle werelderfgoedlocaties", medMapCaption: "Klik op een cirkel voor de naam en het artikel.",
+    medMap: "Kaart van de Middellandse Zee met alle werelderfgoedlocaties", medMapCaption: "Zoom in en klik op een cirkel voor de naam en het artikel.",
     readMore: "Naar het artikel", onWikidata: "Bekijk op Wikidata",
     zoomIn: "Inzoomen", zoomOut: "Uitzoomen", openOsm: "Open in OpenStreetMap", mapOf: (l) => `Kaart van de omgeving van ${l}`,
     articleNav: "Artikelnavigatie", prev: "Vorig artikel", next: "Volgend artikel", current: "Huidig artikel", partOfArticle: "Onderdeel van",
@@ -111,7 +111,7 @@ const md = new Marked({
 // Three white-crested waves after the site name (same drawing as golven.svg), in the text colour.
 const LOGO_WAVES = `<svg class="logo-waves" viewBox="14 206 484 116" aria-hidden="true"><defs><path id="logo-golf" d="M24 152 L24 150 C50 146 64 122 76 85 C90 45 112 14 142 14 C160 14 170 30 172 56 C158 38 136 38 126 60 C114 86 118 126 142 150 L146 152 Z"/></defs><use href="#logo-golf" transform="translate(-10 199) scale(1.25 0.7)"/><use href="#logo-golf" transform="translate(135 199) scale(1.25 0.7)"/><use href="#logo-golf" transform="translate(280 199) scale(1.25 0.7)"/><rect x="0" y="302" width="512" height="18"/></svg>`;
 
-function layout({ title, description, url, jsonld, body, map = false }) {
+function layout({ title, description, url, jsonld, body, map = false, hero = "" }) {
   return `<!doctype html>
 <html lang="${esc(config.language)}">
 <head>
@@ -146,6 +146,7 @@ ${jsonld ? `<script type="application/ld+json">\n${JSON.stringify(jsonld, null, 
     </details>` : ""}
   </nav>
 </header>
+${hero}
 <main>
 ${body}
 </main>
@@ -203,7 +204,7 @@ const MED_BOUNDS = [[30.2, -6.2], [46.2, 36.4]]; // south-west and north-east co
 function overviewMap() {
   const lat = 38.2, lon = 15.1, km = 3800;
   const layer = mapLayer(lat, lon, km);
-  return `<figure class="h-map h-overview">
+  return `<figure class="h-map h-overview home-map">
   <div class="h-map-frame" data-lat="${lat}" data-lon="${lon}" data-km="${km}" data-overview="${esc(JSON.stringify(MED_BOUNDS))}" data-points="${href("assets/map-points.json")}" data-base="${href()}" data-text="${esc(JSON.stringify({ zoomIn: T.zoomIn, zoomOut: T.zoomOut, readMore: T.readMore, onWikidata: T.onWikidata }))}" role="img" aria-label="${esc(T.medMap)}">
     <span class="h-map-tiles">${layer.tiles}</span>
     <span class="h-scale" style="width:${layer.barWidth}">${layer.barLabel}</span>
@@ -212,7 +213,7 @@ function overviewMap() {
       <button type="button" data-zoom="out" aria-label="${T.zoomOut}" title="${T.zoomOut}">−</button>
     </div>
   </div>
-  <figcaption>${T.medMapCaption} ${T.mapData} <a href="https://www.openstreetmap.org/copyright" rel="noopener">${T.mapContributors}</a></figcaption>
+  <figcaption><span class="home-map-hint">${T.medMapCaption}</span> <span class="home-map-credit">${T.mapData} <a href="https://www.openstreetmap.org/copyright" rel="noopener">${T.mapContributors}</a></span></figcaption>
 </figure>`;
 }
 
@@ -567,13 +568,13 @@ ${content}
 ${tagList(d)}
 </article>`;
 
-  if (isHome) body += overviewMap();
+
   if (isHome && posts.length) {
     // The ten most recently published or edited articles, newest first (homeCount in site.config.json).
     const recent = [...posts].sort((a, b) => (Date.parse(b.edited) || 0) - (Date.parse(a.edited) || 0) || orderOf(a) - orderOf(b)).slice(0, Number(config.homeCount) || 10);
     body += `<section><h2>${T.latest}</h2><ul class="cards">${recent.map(homeCard).join("")}</ul></section>`;
   }
-  await write(d.path, layout({ title: d.title, description: d.description, url: d.url, jsonld: d.jsonld, body, map: isHome }));
+  await write(d.path, layout({ title: d.title, description: d.description, url: d.url, jsonld: d.jsonld, body, map: isHome, hero: isHome ? overviewMap() : "" }));
 }
 
 // ---------- Country pages (menu "Landen") ----------

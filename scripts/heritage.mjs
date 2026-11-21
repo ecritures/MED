@@ -192,7 +192,9 @@ export async function getHeritage(qid, lang = "en", imageOverride = null) {
   const files = override ? [override] : bestStatements(pickOwn("P18")).map((s) => s.mainsnak.datavalue?.value).filter(Boolean).slice(0, 1);
   const geo = bestStatements(pickOwn("P625"))[0]?.mainsnak.datavalue?.value;
   const coordinates = geo && typeof geo.latitude === "number" ? { latitude: geo.latitude, longitude: geo.longitude } : null;
-  const info = await commonsInfo(files);
+  // Photo credits from Commons; if Commons does not answer, the photo is still shown (without credit).
+  let info = {};
+  try { info = await commonsInfo(files); } catch (err) { console.warn(`  ! ${qid}: Commons: ${err.message}`); }
   const images = files.map((file) => ({
     file,
     src: info[file]?.thumb || commonsUrl(file, 900),

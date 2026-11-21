@@ -94,7 +94,10 @@ function interactiveMap(frame) {
         const link = p.url
           ? `<a href="${esc(frame.dataset.base + p.url)}">${esc(text.readMore)}</a>`
           : `<a href="https://www.wikidata.org/wiki/${esc(p.q)}" rel="noopener">${esc(text.onWikidata)}</a>`;
-        L.circleMarker([p.lat, p.lon], { radius: 6, weight: 2.5, color: accent, fillColor: color("--stone") || "#fff", fillOpacity: 0.85 })
+        // Sites with an article: filled red; sites still to come: open circle.
+        L.circleMarker([p.lat, p.lon], p.url
+          ? { radius: overview ? 6.5 : 6, weight: 2, color: "#fff", fillColor: accent, fillOpacity: 1 }
+          : { radius: overview ? 5.5 : 6, weight: 2.5, color: accent, fillColor: color("--stone") || "#fff", fillOpacity: 0.85 })
           .bindPopup(`<strong>${esc(p.name)}</strong><br>${link}`)
           .bindTooltip(esc(p.name), { direction: "top", offset: [0, -6] })
           .addTo(others);
