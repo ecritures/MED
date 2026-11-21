@@ -136,6 +136,13 @@ export async function getHeritage(qid, lang = "en", imageOverride = null) {
 
   const itemIds = (pid) => itemIdsOf(claims, pid);
   let countryIds = itemIdsOf(own, "P17").length ? itemIdsOf(own, "P17") : itemIds("P17");
+  // Drop countries with an end date (P582), e.g. France for Tipasa, when a current one is listed too.
+  {
+    const st = bestStatements((itemIdsOf(own, "P17").length ? own : (listing?.claims || own)).P17 || []);
+    const ended = new Set(st.filter((c) => c.qualifiers?.P582).map((c) => c.mainsnak.datavalue?.value?.id));
+    const still = countryIds.filter((id) => !ended.has(id));
+    if (still.length) countryIds = still;
+  }
   // A site in a territory with its own ISO country code (P297) on Wikidata, such as
   // Gibraltar (GI), counts under that territory rather than under the sovereign state.
   const placeIds = itemIdsOf(own, "P131").length ? itemIdsOf(own, "P131") : itemIds("P131");
