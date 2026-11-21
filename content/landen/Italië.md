@@ -2,4 +2,4 @@
 title: Italië
 ---
 
-Werelderfgoed in Italië langs de Middellandse Zee.
+Werelderfgoed langs de Middellandse Zee in Italië.
